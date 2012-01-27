@@ -1,0 +1,3 @@
+[submodule "Benoit"]
+	path = Benoit
+	url = git://github.com/jackhall/Benoit.git
