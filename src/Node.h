@@ -1,5 +1,5 @@
-#ifndef Claude_h
-#define Claude_h
+#ifndef ClaudeNode_h
+#define ClaudeNode_h
 
 /*
     Claude: a real-to-discrete coding scheme based on spiraling trees
@@ -21,14 +21,30 @@
     e-mail: jackwhall7@gmail.com
 */
 
+#include <cmath>
+
 namespace clau {
 
-	#include "Node.h"
-	#include "Fork.h"
-	#include "Leaf.h"
-	#include "Bin.h"
-	#include "Fern.h"
-
+	class Node {
+	private:
+		Node* parent;
+		unsigned short branch_leaves; 
+		
+	public:
+		Node();
+		Node(Node* pParent);
+		Node(const Node& rhs);
+		Node(Node&& rhs);
+		Node& operator=(const Node& rhs);
+		Node& operator=(Node&& rhs);
+		~Node();
+		
+		void update_leaves();
+		unsigned short query(const float number) const;
+		
+	}; //class Node
+	
 } //namespace clau
 
 #endif
+

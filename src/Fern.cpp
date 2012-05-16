@@ -1,9 +1,6 @@
-#ifndef PDF_h
-#define PDF_h
-
 /*
-    Alexander: a neural networks library
-    Copyright (C) 2011-2012  Jack Hall
+    Claude: a real-to-discrete coding scheme based on spiraling trees
+    Copyright (C) 2012  Jack Hall
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -21,22 +18,10 @@
     e-mail: jackwhall7@gmail.com
 */
 
-namespace alex {
-	
-	template<unsigned int D> //number of dimensions
-	class PDF { 
-	private:
-	
-	public:
-		PDF();
-		PDF(const PDF& rhs) = delete; //for now
-		PDF& operator=(const PDF& rhs) = delete;
-		~PDF() = default;
-		
-		info_type query(const data_type point); //how to write these?
-		void update(const data_type point);
-	}; //class PDF
-	
-} //namespace alex
+namespace clau {
 
-#endif
+	
+
+} //namespace clau
+
+

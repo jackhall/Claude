@@ -1,6 +1,6 @@
 /*
-    Alexander: a neural networks library
-    Copyright (C) 2011-2012  Jack Hall
+    Claude: a real-to-discrete coding scheme based on spiraling trees
+    Copyright (C) 2012  Jack Hall
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,19 +18,9 @@
     e-mail: jackwhall7@gmail.com
 */
 
-#include "ValueMatrix.h"
+namespace clau {
 
-namespace alex {
-
-	PDF* ValueMatrix::add(const unsigned int address);
-	void ValueMatrix::remove(const unsigned int address);
-	void ValueMatrix::add_data(const unsigned int address, const data_type data_point);
-	void ValueMatrix::update();
 	
-	bool ValueMatrix::ready() const;
-		
-	info_type ValueMatrix::get_mutual_info(	const unsigned int address1, 
-						const unsigned int address2) const;
 
-} //namespace alex
+} //namespace clau
 
