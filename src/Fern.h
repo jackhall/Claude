@@ -1,5 +1,5 @@
-#ifndef Claude_h
-#define Claude_h
+#ifndef Fern_h
+#define Fern_h
 
 /*
     Claude: a real-to-discrete coding scheme based on spiraling trees
@@ -22,13 +22,43 @@
 */
 
 namespace clau {
-
-	#include "Node.h"
-	#include "Fork.h"
-	#include "Leaf.h"
-	#include "Bin.h"
-	#include "Fern.h"
-
+	
+	class Fern {
+	private:
+		Node* pRoot;
+		float upper_bound, lower_bound;
+		
+	public:
+		class node_iterator {
+		private:
+			Node* current;
+			
+			iterator(Node* start);
+			friend 
+			
+		public:
+			iterator();
+			iterator(Node* start);
+			iterator(const iterator& rhs);
+			Node& operator=(const iterator& rhs);
+			~iterator() = default;
+			
+			iterator& up();
+			iterator& left();
+			iterator& right();
+			
+			Node& operator*() { return *current; }
+			Node* operator->() { return current; }
+			
+		}; //class iterator
+		
+		node_iterator root();
+		bin_iterator begin();
+		bin_iterator end();
+		
+	}; //class Fern
+	
 } //namespace clau
 
 #endif
+

@@ -1,6 +1,3 @@
-#ifndef Claude_h
-#define Claude_h
-
 /*
     Claude: a real-to-discrete coding scheme based on spiraling trees
     Copyright (C) 2012  Jack Hall
@@ -23,12 +20,8 @@
 
 namespace clau {
 
-	#include "Node.h"
-	#include "Fork.h"
-	#include "Leaf.h"
-	#include "Bin.h"
-	#include "Fern.h"
+	
 
 } //namespace clau
 
-#endif
+
