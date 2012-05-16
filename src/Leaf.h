@@ -24,8 +24,18 @@
 namespace clau {
 
 	class Leaf : public Node {
+	private:
+		Bin* bin;
 		
-	}
+	public:
+		Leaf();
+		Leaf(const Leaf& rhs);
+		Leaf& operator=(const Leaf& rhs);
+		~Leaf();
+		
+		unsigned short query(const float number) const;
+		
+	}; //class Bin
 
 } //namespace clau
 

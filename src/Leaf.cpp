@@ -20,6 +20,14 @@
 
 namespace clau {
 	
+	Leaf::Leaf()
 	
+	Leaf::Leaf(const Leaf& rhs)
+	
+	Leaf& Leaf::operator=(const Leaf& rhs)
+	
+	Leaf::~Leaf()
+	
+	unsigned short Leaf::query(const float number) const
 	
 } //namespace clau

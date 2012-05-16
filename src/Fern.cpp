@@ -20,7 +20,19 @@
 
 namespace clau {
 
+	Fern::Fern()
 	
+	Fern::Fern(const Fern& rhs)
+	
+	Fern& Fern::operator=(const Fern& rhs)
+	
+	Fern::~Fern()
+	
+	Fern::node_iterator Fern::root()
+	
+	Fern::bin_iterator Fern::begin()
+	
+	Fern::bin_iterator Fern::end()
 
 } //namespace clau
 

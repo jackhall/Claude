@@ -20,7 +20,23 @@
 
 namespace clau {
 
+	Node::Node()
 	
-
+	Node::Node(Node* pParent)
+	
+	Node::Node(const Node& rhs)
+	
+	Node::Node(Node&& rhs)
+	
+	Node& Node::operator=(const Node& rhs)
+	
+	Node& Node::operator=(Node&& rhs)
+	
+	Node::~Node()
+	
+	bool Node::is_leaf() const
+	
+	void Node::update_leaves()
+	
 } //namespace clau
 

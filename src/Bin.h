@@ -20,6 +20,27 @@
 
 namespace clau {
 	
-	
+	class Bin {
+	private:
+		std::list<Leaf*> leaves;
+		unsigned short index;
+		bool at_left, at_right;
+		
+	public:
+		Bin();
+		Bin(const unsigned short number);
+		Bin(const Bin& rhs);
+		Bin& operator=(const Bin& rhs);
+		~Bin();
+		
+		void insert(Leaf* new_leaf);
+		void remove(Leaf* old_leaf);
+		void move_left();
+		void move_right();
+		
+		bool can_move_left(const Leaf* leaf) const;
+		bool can_move_right(const Leaf* leaf) const;
+		
+	}; //class Bin
 	
 } //namespace clau

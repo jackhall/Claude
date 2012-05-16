@@ -37,10 +37,11 @@ namespace clau {
 		Node(Node&& rhs);
 		Node& operator=(const Node& rhs);
 		Node& operator=(Node&& rhs);
-		~Node();
+		virtual ~Node();
 		
+		bool is_leaf() const;
 		void update_leaves();
-		unsigned short query(const float number) const;
+		virtual unsigned short query(const float number) const = 0;
 		
 	}; //class Node
 	

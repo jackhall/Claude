@@ -25,32 +25,56 @@ namespace clau {
 	
 	class Fern {
 	private:
-		Node* pRoot;
+		Node* root;
+		std::vector<Bin> bins;
 		float upper_bound, lower_bound;
 		
 	public:
+		Fern();
+		Fern(const Fern& rhs);
+		Fern& operator=(const Fern& rhs);
+		~Fern();
+	
 		class node_iterator {
 		private:
 			Node* current;
 			
-			iterator(Node* start);
-			friend 
-			
 		public:
-			iterator();
-			iterator(Node* start);
-			iterator(const iterator& rhs);
-			Node& operator=(const iterator& rhs);
-			~iterator() = default;
+			node_iterator();
+			node_iterator(Node* start);
+			node_iterator(const node_iterator& rhs);
+			Node& operator=(const node_iterator& rhs);
+			~node_iterator() = default;
 			
-			iterator& up();
-			iterator& left();
-			iterator& right();
+			node_iterator& up();
+			node_iterator& left();
+			node_iterator& right();
 			
 			Node& operator*() { return *current; }
 			Node* operator->() { return current; }
 			
-		}; //class iterator
+		}; //class node_iterator
+		
+		class bin_iterator {
+		private:
+			Bin* current;
+		
+		public:
+			bin_iterator();
+			bin_iterator(Bin* start);
+			bin_iterator(const bin_iterator& rhs);
+			Bin& operator=(const bin_iterator& rhs);
+			~bin_iterator() = default;
+			
+			bin_iterator& operator++();
+			bin_iterator operator++(int);
+			bin_iterator& operator--();
+			bin_iterator operator--(int);
+			
+			Bin& operator*() { return *current; }
+			Bin* operator->() { return current; }
+		
+		}; //class bin_iterator
 		
 		node_iterator root();
 		bin_iterator begin();

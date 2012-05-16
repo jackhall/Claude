@@ -20,6 +20,26 @@
 
 namespace clau {
 	
+	Bin::Bin()
 	
+	Bin::Bin(const unsigned short number)
+	
+	Bin::Bin(const Bin& rhs)
+	
+	Bin& Bin::operator=(const Bin& rhs)
+	
+	Bin::~Bin()
+	
+	void Bin::insert(Leaf* new_leaf)
+	
+	void Bin::remove(Leaf* old_leaf)
+	
+	void Bin::move_left()
+	
+	void Bin::move_right()
+	
+	bool Bin::can_move_left() const
+	
+	bool Bin::can_move_right() const
 	
 } //namespace clau
