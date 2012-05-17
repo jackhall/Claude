@@ -26,22 +26,25 @@
 namespace clau {
 
 	class Node {
+	/*
+		The node class describes the behavior that roots, forks, and leaves
+		have in common. This is mainly an common interface for communication
+		between nodes. All nodes also have a parent; the root node is simply
+		sets this pointer to NULL.
+	*/
 	private:
-		Node* parent;
-		unsigned short branch_leaves; 
+		Node* parent; //this is only used by iterators
 		
 	public:
 		Node();
 		Node(Node* pParent);
 		Node(const Node& rhs);
-		Node(Node&& rhs);
 		Node& operator=(const Node& rhs);
-		Node& operator=(Node&& rhs);
 		virtual ~Node();
 		
-		bool is_leaf() const;
-		void update_leaves();
-		virtual unsigned short query(const float number) const = 0;
+		virtual bool is_leaf() const = 0;
+		virtual void update_boundary(const num_type lower_bound, const num_type upper_bound) = 0;
+		virtual unsigned short query(const num_type number) const = 0;
 		
 	}; //class Node
 	

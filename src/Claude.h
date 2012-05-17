@@ -23,6 +23,21 @@
 
 namespace clau {
 
+	/*
+		Claude is an algorithm that uses a binary tree to partition
+		real-number spaces. The partitioning is designed to be
+		optimal in an information-theoretic sense, extracting only
+		the information necessary for whatever decision is made
+		with the data. 
+	
+		The current version of Claude does not include interval 
+		extensions and asks the programmer to manually set the 
+		number of discrete bins. It also is not generalized for
+		use in more than one dimension. 
+	*/
+	
+	typedef num_type float;
+	
 	#include "Node.h"
 	#include "Fork.h"
 	#include "Leaf.h"

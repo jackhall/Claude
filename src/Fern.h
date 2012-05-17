@@ -27,7 +27,7 @@ namespace clau {
 	private:
 		Node* root;
 		std::vector<Bin> bins;
-		float upper_bound, lower_bound;
+		num_type upper_bound, lower_bound;
 		
 	public:
 		Fern();

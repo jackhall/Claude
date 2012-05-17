@@ -26,27 +26,26 @@
 namespace clau {
 
 	class Fork : public Node {
+	/*
+		The Fork class uses the Node interface. It also stores its boundary as a num_type and
+		a bool that tells whether the boundary is on the left or right of the current interval.
+	*/
 	private: 
 		Node* left, right;
-		float boundary;
-		
-		float infer_boundary() const;
+		bool value;
+		num_type boundary;
 		
 	public:
-		bool value;
 		
 		Fork();
-		Fork(Fork* pParent, const bool child);
-		Fork(const bool bValue, const float range, Fork* child0=NULL, Fork* child1=NULL);
-		Fork(const Fork& rhs);
-		Fork(Fork&& rhs);
+		Fork(Fork* pParent, const bool bValue);
+		Fork(const Fork& rhs, Fork* pParent=NULL);
 		Fork& operator=(const Fork& rhs);
-		Fork& operator=(Fork&& rhs);
 		~Fork();
 		
-		void update_boundary(const float lower_bound, const float upper_bound);
-		void update_leaves();
-		unsigned short query(const float number) const;
+		bool is_leaf() const { return false; }
+		void update_boundary(const num_type lower_bound, const num_type upper_bound);
+		unsigned short query(const num_type number) const;
 		
 	}; //class Fork
 	

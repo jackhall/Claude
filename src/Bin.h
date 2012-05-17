@@ -21,6 +21,9 @@
 namespace clau {
 	
 	class Bin {
+	/*
+		
+	*/
 	private:
 		std::list<Leaf*> leaves;
 		unsigned short index;
@@ -38,6 +41,7 @@ namespace clau {
 		void move_left();
 		void move_right();
 		
+		unsigned short get_index() const { return index; }
 		bool can_move_left(const Leaf* leaf) const;
 		bool can_move_right(const Leaf* leaf) const;
 		

@@ -24,16 +24,24 @@
 namespace clau {
 
 	class Leaf : public Node {
+	/*
+		A Leaf uses the Node interface, adding a pointer to a discrete Bin. Its version
+		of update_boundary does nothing, as it has no boundary and Bins require no 
+		updating. Its version of query returns the index of the bin it points to. 
+	*/
 	private:
 		Bin* bin;
 		
 	public:
 		Leaf();
+		Leaf(Fork* pParent, Bin* pBin);
 		Leaf(const Leaf& rhs);
 		Leaf& operator=(const Leaf& rhs);
 		~Leaf();
 		
-		unsigned short query(const float number) const;
+		bool is_leaf() const { return true; }
+		void update_boundary(const num_type lower_bound, const num_type upper_bound) {}
+		unsigned short query(const num_type number) const { return bin->get_index(); }
 		
 	}; //class Bin
 

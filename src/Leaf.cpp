@@ -20,14 +20,24 @@
 
 namespace clau {
 	
-	Leaf::Leaf()
+	Leaf::Leaf() : Node(NULL), bin(NULL) {}
 	
-	Leaf::Leaf(const Leaf& rhs)
+	Leaf::Leaf(Fork* pParent, Bin* pBin) 
+		: Node(pParent), bin(pBin) {
+		bin->insert(this);
+	}
 	
-	Leaf& Leaf::operator=(const Leaf& rhs)
+	Leaf::Leaf(const Leaf& rhs, Fork* pParent) 
+		: {
+		//both parent and bin need new values; does it make sense to copy a leaf?
+	}
 	
-	Leaf::~Leaf()
+	Leaf& Leaf::operator=(const Leaf& rhs) {
+		//both parent and bin need new values; does it make sense to copy a leaf?
+	}
 	
-	unsigned short Leaf::query(const float number) const
+	Leaf::~Leaf() {
+		bin->remove(this);
+	}
 	
 } //namespace clau
