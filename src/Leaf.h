@@ -48,6 +48,18 @@ namespace clau {
 		
 		void set_bin(const bin_type nBin) { if(nBin <= max_bin) bin = nBin; }
 		
+		class iterator : public Node::iterator {
+		public:
+			iterator() : Node::iterator() {}
+			iterator(Node* node) : Node::iterator(node) {}
+			iterator(const Node::iterator& rhs) : Node::iterator(rhs) {}
+			using Node::iterator::operator=;
+			~iterator() = default;
+		
+			iterator& left() { return *this; }
+			iterator& right() { return *this; }
+		};
+		
 	}; //class Bin
 
 } //namespace clau

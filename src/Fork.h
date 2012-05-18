@@ -49,6 +49,18 @@ namespace clau {
 		void update_max_bin(const bin_type nMaxBin);
 		bin_type query(const num_type number) const;
 		
+		class iterator : public Node::iterator {
+		public:
+			iterator() : Node::iterator() {}
+			iterator(Node* node) : Node::iterator(node) {}
+			iterator(const Node::iterator& rhs) : Node::iterator(rhs) {}
+			using Node::iterator::operator=;
+			~iterator() = default;
+		
+			iterator& left() { if(left!=NULL) current = current->left; return *this; }
+			iterator& right() { if(right!=NULL) current = current->right; return *this; }
+		};
+		
 	}; //class Fork
 	
 } //namespace clau

@@ -64,7 +64,10 @@ namespace clau {
 		return *this;
 	}
 	
-	Fern::iterator&  Fern::iterator::up()
+	Fern::iterator&  Fern::iterator::up() {
+		if(current->parent != NULL)
+		return *this;
+	}
 	
 	Fern::iterator&  Fern::iterator::left()
 	

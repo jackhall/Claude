@@ -28,10 +28,13 @@ namespace clau {
 		The node class describes the behavior that roots, forks, and leaves
 		have in common. This is mainly an common interface for communication
 		between nodes. All nodes also have a parent; the root node is simply
-		sets this pointer to NULL.
+		sets this pointer to NULL. All new nodes must be adjusted to their 
+		context after creation, whether it be update_max_bin() for leaves or
+		update_boundary() for forks.
 	*/
 	private:
 		Node* parent; //this is only used by iterators
+		friend Fern::iterator; //need forward declaration?
 		
 	public:
 		Node();
@@ -44,6 +47,28 @@ namespace clau {
 		virtual void update_boundary(const num_type lower_bound, const num_type upper_bound) = 0;
 		virtual void update_max_bin(const bin_type nMaxBin) = 0;
 		virtual bin_type query(const num_type number) const = 0;
+		
+		class iterator {
+		protected:
+			Node* current;
+			
+		public:
+			iterator() : current(NULL) {}
+			iterator(Node* node) : current(node) {}
+			iterator(const iterator& rhs) : current(rhs.current) {}
+			iterator& operator=(const iterator& rhs) 
+				{ if(this != &rhs) current = rhs.current; return *this; }
+			~iterator() = default;
+			
+			Node& operator*() { return *current; }
+			Node* operator->() { return current; }
+			
+			iterator& up() { if(current->parent != NULL) current = current->parent; return *this; } 
+			iterator& left();
+			iterator& right(); 
+			
+			bool at_root() { return current->parent == NULL; }
+		};
 		
 	}; //class Node
 	

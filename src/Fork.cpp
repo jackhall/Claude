@@ -35,10 +35,10 @@ namespace clau {
 	Fork::Fork(const Fork& rhs, Fork* pParent)
 		: Node(pParent), left(NULL), right(NULL), 
 		  boundary(rhs.boundary), value(rhs.value) {
-		//parent should be specified because branches are copied to be
-		//analagous, not duplicates. keeping the same parent would create
+		//The parent should be specified because branches are copied to be
+		//analagous, not duplicates. Keeping the same parent would create
 		//a "ghost" tree alongside the original one, instead of a new copy
-		//in a new place
+		//in a new place. 
 		if(rhs.left != NULL) {
 			if( rhs.left.is_leaf() ) left = new Leaf(*rhs.left, this);
 			else left = new Fork(*rhs.left, this);
@@ -53,22 +53,43 @@ namespace clau {
 	Fork& Fork::operator=(const Fork& rhs) {
 		//keeps same parent, but deletes child branches and copies new ones from rhs
 		if(this != &rhs) {
-			if(left != NULL) delete left;
-			if(right != NULL) delete right;
+			if(left != NULL) { 
+				delete left;
+				left = NULL;
+			}
+			
+			if(right != NULL) {
+				delete right;
+				right = NULL;
+			}
 			
 			value = rhs.value;
 			boundary = rhs.boundary;
 			
-			left = new Fork(*rhs.left);
-			right = new Fork(*rhs.right);
+			if(rhs.left != NULL) {
+				if( rhs.left.is_leaf() ) left = new Leaf(*rhs.left, this);
+				else left = new Fork(*rhs.left, this);
+			}
+			
+			if(rhs.right != NULL) {
+				if( rhs.right.is_leaf() ) right = new Leaf(*rhs.right, this);
+				else right = new Fork(*rhs.right, this);
+			}
 		}
 		
 		return *this;
 	}
 	
 	Fork::~Fork() {
-		if(left!=NULL) delete left;
-		if(right!=NULL) delete right;
+		if(left!=NULL) {
+			delete left;
+			left = NULL;
+		}
+		
+		if(right!=NULL) {
+			delete right;
+			right = NULL;
+		}
 	}
 	
 	void Fork::update_boundary(const num_type lower_bound, const num_type upper_bound) {
@@ -77,7 +98,7 @@ namespace clau {
 		if(value) boundary = lower_bound + ratio*(upper_bound - lower_bound);
 		else boundary = lower_bound + (1-ratio)*(upper_bound - lower_bound);
 		
-		if(child_zero!=NULL && child_one!=NULL) {		
+		if(child_zero!=NULL && child_one!=NULL) {
 			left->update_boundary(lower_bound, boundary);
 			right->update_boundary(boundary, upper_bound);
 		}
@@ -92,6 +113,20 @@ namespace clau {
 		//calls the proper child node recursively
 		if(number < boundary) return left->query(number);
 		else return right->query(number);
+	}
+
+	Node::iterator&  Fork::iterator::left() { 
+		if(left!=NULL) {
+			current = static_cast<Fork*>(current)->left; 
+		}
+		return *this; 
+	}
+	
+	Node::iterator&  Fork::iterator::right() { 
+		if(right!=NULL) {
+			current = static_cast<Fork*>(current)->right; 
+		}
+		return *this; 
 	}
 
 } //namespace clau
