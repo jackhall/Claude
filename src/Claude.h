@@ -37,11 +37,11 @@ namespace clau {
 	*/
 	
 	typedef num_type float;
+	typedef bin_type unsigned short;
 	
 	#include "Node.h"
 	#include "Fork.h"
 	#include "Leaf.h"
-	#include "Bin.h"
 	#include "Fern.h"
 
 } //namespace clau

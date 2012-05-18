@@ -18,6 +18,8 @@
     e-mail: jackwhall7@gmail.com
 */
 
+#include "Claude.h"
+
 namespace clau {
 
 	Node::Node() : parent(NULL) {}

@@ -21,8 +21,6 @@
     e-mail: jackwhall7@gmail.com
 */
 
-#include <cmath>
-
 namespace clau {
 
 	class Node {
@@ -44,7 +42,8 @@ namespace clau {
 		
 		virtual bool is_leaf() const = 0;
 		virtual void update_boundary(const num_type lower_bound, const num_type upper_bound) = 0;
-		virtual unsigned short query(const num_type number) const = 0;
+		virtual void update_max_bin(const bin_type nMaxBin) = 0;
+		virtual bin_type query(const num_type number) const = 0;
 		
 	}; //class Node
 	

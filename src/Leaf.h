@@ -21,27 +21,32 @@
     e-mail: jackwhall7@gmail.com
 */
 
+#include "Node.h"
+
 namespace clau {
 
 	class Leaf : public Node {
 	/*
-		A Leaf uses the Node interface, adding a pointer to a discrete Bin. Its version
-		of update_boundary does nothing, as it has no boundary and Bins require no 
-		updating. Its version of query returns the index of the bin it points to. 
+		A Leaf uses the Node interface, adding a bin number. Its version
+		of update_boundary does nothing, as it has no boundary. 
+		Its version of query returns the bin number. 
 	*/
 	private:
-		Bin* bin;
+		bin_type max_bin, bin;
 		
 	public:
 		Leaf();
-		Leaf(Fork* pParent, Bin* pBin);
-		Leaf(const Leaf& rhs);
+		Leaf(Fork* pParent, const bin_type nMaxBin, const bin_type nBin=0);
+		Leaf(const Leaf& rhs, Fork* pParent);
 		Leaf& operator=(const Leaf& rhs);
 		~Leaf();
 		
 		bool is_leaf() const { return true; }
 		void update_boundary(const num_type lower_bound, const num_type upper_bound) {}
-		unsigned short query(const num_type number) const { return bin->get_index(); }
+		void update_max_bin(const bin_type nMaxBin);
+		bin_type query(const num_type number=0.0) const { return bin->get_index(); }
+		
+		void set_bin(const bin_type nBin) { if(nBin <= max_bin) bin = nBin; }
 		
 	}; //class Bin
 

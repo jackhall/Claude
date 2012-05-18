@@ -22,13 +22,15 @@
 */
 
 #include <cmath>
+#include "Node.h"
 
 namespace clau {
 
 	class Fork : public Node {
 	/*
-		The Fork class uses the Node interface. It also stores its boundary as a num_type and
-		a bool that tells whether the boundary is on the left or right of the current interval.
+		The Fork class uses the Node interface. It also stores its boundary as a 
+		num_type and a bool that tells whether the boundary is on the left or 
+		right of the current interval.
 	*/
 	private: 
 		Node* left, right;
@@ -36,7 +38,6 @@ namespace clau {
 		num_type boundary;
 		
 	public:
-		
 		Fork();
 		Fork(Fork* pParent, const bool bValue);
 		Fork(const Fork& rhs, Fork* pParent=NULL);
@@ -45,7 +46,8 @@ namespace clau {
 		
 		bool is_leaf() const { return false; }
 		void update_boundary(const num_type lower_bound, const num_type upper_bound);
-		unsigned short query(const num_type number) const;
+		void update_max_bin(const bin_type nMaxBin);
+		bin_type query(const num_type number) const;
 		
 	}; //class Fork
 	

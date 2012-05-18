@@ -18,26 +18,32 @@
     e-mail: jackwhall7@gmail.com
 */
 
+#include "Claude.h"
+
 namespace clau {
 	
-	Leaf::Leaf() : Node(NULL), bin(NULL) {}
+	Leaf::Leaf() : Node(NULL), max_bin(0), bin(0) {}
 	
-	Leaf::Leaf(Fork* pParent, Bin* pBin) 
-		: Node(pParent), bin(pBin) {
-		bin->insert(this);
+	Leaf::Leaf(Fork* pParent, const bin_type nMaxBin, const bin_type nBin) 
+		: Node(pParent), max_bin(nMaxBin), bin(nBin) {
+		if(nBin > nMaxBin) bin = 0;	
 	}
 	
 	Leaf::Leaf(const Leaf& rhs, Fork* pParent) 
-		: {
-		//both parent and bin need new values; does it make sense to copy a leaf?
-	}
+		: Node(pParent), max_bin(rhs.max_bin), bin(rhs.bin) {}
 	
 	Leaf& Leaf::operator=(const Leaf& rhs) {
-		//both parent and bin need new values; does it make sense to copy a leaf?
+		if(this != &rhs) {
+			max_bin = rhs.max_bin;
+			set_bin(rhs.bin);
+		}
 	}
 	
-	Leaf::~Leaf() {
-		bin->remove(this);
+	Leaf::~Leaf() {}
+	
+	void Leaf::update_max_bin(const bin_type nMaxBin) {
+		max_bin = nMaxBin;
+		if(bin > max_bin) bin = max_bin; //maybe decide on a new bin number randomly?
 	}
 	
 } //namespace clau

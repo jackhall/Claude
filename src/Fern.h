@@ -21,64 +21,51 @@
     e-mail: jackwhall7@gmail.com
 */
 
+#include "Node.h"
+#include "Fork.h"
+#include "Leaf.h"
+
 namespace clau {
 	
 	class Fern {
 	private:
-		Node* root;
-		std::vector<Bin> bins;
+		Fork* root;
 		num_type upper_bound, lower_bound;
+		bin_type max_bin;
 		
 	public:
 		Fern();
+		Fern(const num_type lowerBound, const num_type upperBound, 
+		     const bin_type numBins);
 		Fern(const Fern& rhs);
 		Fern& operator=(const Fern& rhs);
 		~Fern();
 	
-		class node_iterator {
+		void mutate();
+		void crossover(const Fern& other);
+	
+		class iterator {
 		private:
 			Node* current;
+			iterator(Node* start);
+			friend Fern::root();
 			
 		public:
-			node_iterator();
-			node_iterator(Node* start);
-			node_iterator(const node_iterator& rhs);
-			Node& operator=(const node_iterator& rhs);
-			~node_iterator() = default;
+			iterator() : current(NULL) {}
+			iterator(const iterator& rhs) : current(rhs.current) {}
+			Node& operator=(const iterator& rhs);
+			~iterator() = default;
 			
-			node_iterator& up();
-			node_iterator& left();
-			node_iterator& right();
+			iterator& up();
+			iterator& left();
+			iterator& right();
 			
 			Node& operator*() { return *current; }
 			Node* operator->() { return current; }
 			
-		}; //class node_iterator
+		}; //class iterator
 		
-		class bin_iterator {
-		private:
-			Bin* current;
-		
-		public:
-			bin_iterator();
-			bin_iterator(Bin* start);
-			bin_iterator(const bin_iterator& rhs);
-			Bin& operator=(const bin_iterator& rhs);
-			~bin_iterator() = default;
-			
-			bin_iterator& operator++();
-			bin_iterator operator++(int);
-			bin_iterator& operator--();
-			bin_iterator operator--(int);
-			
-			Bin& operator*() { return *current; }
-			Bin* operator->() { return current; }
-		
-		}; //class bin_iterator
-		
-		node_iterator root();
-		bin_iterator begin();
-		bin_iterator end();
+		iterator root() { return iterator(root); }
 		
 	}; //class Fern
 	

@@ -18,7 +18,11 @@
     e-mail: jackwhall7@gmail.com
 */
 
+#include "Claude.h"
+
 namespace clau {
+
+//need to take another look at Leaf copying and creation
 
 	Fork::Fork() 
 		: parent(NULL), left(NULL), right(NULL), 
@@ -79,7 +83,12 @@ namespace clau {
 		}
 	}
 	
-	unsigned short Fork::query(const num_type number) const {
+	void Fork::update_max_bin(const bin_type nMaxBin) {
+		left->update_max_bin(nMaxBin);
+		right->update_max_bin(nMaxBin);
+	}
+	
+	bin_type Fork::query(const num_type number) const {
 		//calls the proper child node recursively
 		if(number < boundary) return left->query(number);
 		else return right->query(number);
