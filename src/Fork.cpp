@@ -29,7 +29,7 @@ namespace clau {
 		  boundary(0.0), value(false) {}
 	
 	Fork::Fork(Fork* pParent, const bool bValue) 
-		: Node(pParent), left(new Leaf()), right(new Leaf()), 
+		: Node(pParent), left(new Leaf(this)), right(new Leaf(this)), 
 		  value(bValue), boundary(0.0) {}
 	
 	Fork::Fork(const Fork& rhs, Fork* pParent)
@@ -120,8 +120,24 @@ namespace clau {
 		else return this;
 	}
 
-	void Fork::mutate(const num_type random) {
-		value = !value;
+	void Fork::mutate(Generator& gen) {
+		std::bernoulli_distribution random_bits(0.5);
+		
+		if( random_bits(gen) ) merge();
+		else value = !value;
+	}
+
+	void Fork::merge() {
+	//deletes this object! invalidates all pointers, references, iterators to it
+		if(parent != NULL) {
+			Fork* parentFork = static_cast<Fork*>(parent);
+			if(parentFork->left == this) {
+				parentFork->left = new Leaf(parentFork);
+			} else {
+				parentFork->right = new Leaf(parentFork);
+			}
+			delete this;
+		}
 	}
 	
 } //namespace clau

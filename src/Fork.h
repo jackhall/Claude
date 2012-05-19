@@ -52,7 +52,9 @@ namespace clau {
 		void update_boundary(const num_type lower_bound, const num_type upper_bound);
 		void update_max_bin(const bin_type nMaxBin);
 		bin_type query(const num_type number) const;
-		void mutate(const num_type random);
+		void mutate(Generator& gen);
+		void split(const bool bValue) {}
+		void merge();
 		
 	}; //class Fork
 	

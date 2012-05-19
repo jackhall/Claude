@@ -41,7 +41,7 @@ namespace clau {
 		
 	public:
 		Node();
-		Node(Node* pParent);
+		explicit Node(Node* pParent);
 		Node(const Node& rhs);
 		Node& operator=(const Node& rhs);
 		virtual ~Node();
@@ -51,7 +51,10 @@ namespace clau {
 					     const num_type upper_bound) = 0;
 		virtual void update_max_bin(const bin_type nMaxBin) = 0;
 		virtual bin_type query(const num_type number) const = 0;
-		virtual void mutate(const num_type random) = 0;
+		virtual void mutate(Generator& gen) = 0;
+		virtual void split(const bool bValue) = 0;
+		virtual void merge() = 0;
+		
 		
 		class iterator {
 		protected:
@@ -72,6 +75,7 @@ namespace clau {
 			iterator& left()  { current = current->left();  return *this; }
 			iterator& right() { current = current->right(); return *this; }
 			
+			void replace(Node* new_node);
 			bool at_root() { return current->parent == NULL; }
 		};
 		

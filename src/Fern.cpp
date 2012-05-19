@@ -97,10 +97,8 @@ namespace clau {
 			}
 		}
 		
-		//need to write split and merge mutations (structure mutations) here!
+		locus->mutate(gen); //this may invalidate locus iterator, so don't touch it after this
 		root->update_max_bin(max_bin); //necessary for all merging and splitting mutations
-		
-		locus->mutate(std::generate_canonical<num_type,16>(gen)); //value mutation
 		root->update_boundary(lower_bound, upper_bound); //this will do nothing if mutation was a merge
 	}
 	

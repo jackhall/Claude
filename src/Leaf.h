@@ -39,8 +39,8 @@ namespace clau {
 		Node* right() { return this; }
 		
 	public:
-		Leaf();
-		Leaf(Fork* pParent, const bin_type nMaxBin, const bin_type nBin=0);
+		Leaf() = delete;
+		explicit Leaf(Fork* pParent);
 		Leaf(const Leaf& rhs, Fork* pParent);
 		Leaf& operator=(const Leaf& rhs);
 		~Leaf();
@@ -49,7 +49,9 @@ namespace clau {
 		void update_boundary(const num_type lower_bound, const num_type upper_bound) {}
 		void update_max_bin(const bin_type nMaxBin);
 		bin_type query(const num_type number=0.0) const { return bin; }
-		void mutate(const num_type random);
+		void mutate(Generator& gen);
+		void split(const bool bValue);
+		void merge() {}
 		
 	}; //class Bin
 
