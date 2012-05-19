@@ -34,6 +34,10 @@ namespace clau {
 	private:
 		bin_type max_bin, bin;
 		
+		Node* up() { return parent; }
+		Node* left() { return this; }
+		Node* right() { return this; }
+		
 	public:
 		Leaf();
 		Leaf(Fork* pParent, const bin_type nMaxBin, const bin_type nBin=0);
@@ -44,21 +48,8 @@ namespace clau {
 		bool is_leaf() const { return true; }
 		void update_boundary(const num_type lower_bound, const num_type upper_bound) {}
 		void update_max_bin(const bin_type nMaxBin);
-		bin_type query(const num_type number=0.0) const { return bin->get_index(); }
-		
-		void set_bin(const bin_type nBin) { if(nBin <= max_bin) bin = nBin; }
-		
-		class iterator : public Node::iterator {
-		public:
-			iterator() : Node::iterator() {}
-			iterator(Node* node) : Node::iterator(node) {}
-			iterator(const Node::iterator& rhs) : Node::iterator(rhs) {}
-			using Node::iterator::operator=;
-			~iterator() = default;
-		
-			iterator& left() { return *this; }
-			iterator& right() { return *this; }
-		};
+		bin_type query(const num_type number=0.0) const { return bin; }
+		void mutate(const num_type random);
 		
 	}; //class Bin
 

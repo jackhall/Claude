@@ -37,6 +37,10 @@ namespace clau {
 		bool value;
 		num_type boundary;
 		
+		Node* up();
+		Node* left() { return left; }
+		Node* right() { return right; }
+		
 	public:
 		Fork();
 		Fork(Fork* pParent, const bool bValue);
@@ -48,18 +52,7 @@ namespace clau {
 		void update_boundary(const num_type lower_bound, const num_type upper_bound);
 		void update_max_bin(const bin_type nMaxBin);
 		bin_type query(const num_type number) const;
-		
-		class iterator : public Node::iterator {
-		public:
-			iterator() : Node::iterator() {}
-			iterator(Node* node) : Node::iterator(node) {}
-			iterator(const Node::iterator& rhs) : Node::iterator(rhs) {}
-			using Node::iterator::operator=;
-			~iterator() = default;
-		
-			iterator& left() { if(left!=NULL) current = current->left; return *this; }
-			iterator& right() { if(right!=NULL) current = current->right; return *this; }
-		};
+		void mutate(const num_type random);
 		
 	}; //class Fork
 	

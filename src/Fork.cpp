@@ -115,19 +115,14 @@ namespace clau {
 		else return right->query(number);
 	}
 
-	Node::iterator&  Fork::iterator::left() { 
-		if(left!=NULL) {
-			current = static_cast<Fork*>(current)->left; 
-		}
-		return *this; 
-	}
-	
-	Node::iterator&  Fork::iterator::right() { 
-		if(right!=NULL) {
-			current = static_cast<Fork*>(current)->right; 
-		}
-		return *this; 
+	Node* Fork::up() {
+		if(parent != NULL) return parent;
+		else return this;
 	}
 
+	void Fork::mutate(const num_type random) {
+		//flip value/convert to leaf
+	}
+	
 } //namespace clau
 

@@ -46,32 +46,34 @@ namespace clau {
 			upper_bound = rhs.upper_bound;
 			lower_bound = rhs.lower_bound;
 			max_bin = rhs.max_bin;
-		}	
+		}
 		return *this;
 	}
 	
 	Fern::~Fern() {
 		delete root;
 	}
-
-	void Fern::mutate() 
 	
-	void Fern::crossover(const Fern& other) 
-
-	////////////////// iterator methods ///////////////////
-	Fern::iterator&  Fern::iterator::operator=(const Fern::iterator& rhs) {
-		if(this != &rhs) current = rhs.current;
-		return *this;
+	Node::iterator Fern::select_random_node() {
+		//record a traversal of the whole tree
+		std::deque<Node::iterator> 
+		
+		//pick a random node
+		std::random_device rd;
+		std::mt19937 gen(rd);
 	}
 	
-	Fern::iterator&  Fern::iterator::up() {
-		if(current->parent != NULL)
-		return *this;
+	void Fern::mutate() {
+		auto locus = select_random_node();
+		//finish...
 	}
 	
-	Fern::iterator&  Fern::iterator::left()
-	
-	Fern::iterator&  Fern::iterator::right()
+	void Fern::crossover(const Fern& other) {
+		auto locus1 = select_random_node();
+		auto locus2 = other.select_random_node();
+		
+		
+	}
 
 } //namespace clau
 
