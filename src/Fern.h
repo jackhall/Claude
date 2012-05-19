@@ -33,8 +33,6 @@ namespace clau {
 		num_type upper_bound, lower_bound;
 		bin_type max_bin;
 		
-		Node::iterator select_random_node(); 
-		
 	public:
 		Fern();
 		Fern(const num_type lowerBound, const num_type upperBound, 

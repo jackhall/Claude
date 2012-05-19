@@ -47,7 +47,7 @@ namespace clau {
 	}
 	
 	void Leaf::mutate(const num_type random) {
-		//decide on a new bin number randomly
+		bin = (max_bin+1)*random;
 	}
 	
 } //namespace clau

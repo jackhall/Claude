@@ -54,27 +54,115 @@ namespace clau {
 		delete root;
 	}
 	
-	Node::iterator Fern::select_random_node() {
-		//record a traversal of the whole tree
-		std::deque<Node::iterator> 
-		
-		//pick a random node
-		std::random_device rd;
-		std::mt19937 gen(rd);
-	}
-	
 	void Fern::mutate() {
-		auto locus = select_random_node();
-		//finish...
+		Node::iterator itn(root); //new node
+		itn.left(); //excluding the root node from the search
+		Node::iterator locus(itn); //current choice
+		
+		vector<bool> branch_stack(); //stack recording traversal choices: left=false, right=true
+		branch_stack.push_back(false); //starting from left child of root
+		
+		unsigned int n=1; //number of nodes traversed so far
+		
+		std::random_device rd;
+		std::mt19937 gen(rd());
+		
+		bool stop = false;
+		while(!stop) {
+			//test current node
+			num_type chance = 1/n;
+			if( chance >= std::generate_canonical<num_type,16>(gen) ) locus = itn;
+			++n;
+			
+			//find new node
+			if(itn->is_leaf()) {
+				itn.up();
+			
+				while(branch_stack.back()) { //until we reach an unexplored right branch
+					itn.up();
+					branch_stack.pop_back();
+					if(branch_stack.size() == 0) { //no more unexplored branches
+						stop = true;
+						break;
+					}
+				}
+				
+				if(!stop) { 
+					itn.right();
+					branch_stack.back() = true;
+				}
+			} else {
+				itn.left();
+				branch_stack.push_back(false);
+			}
+		}
+		
+		//need to write split and merge mutations (structure mutations) here!
+		root->update_max_bin(max_bin); //necessary for all merging and splitting mutations
+		
+		locus->mutate(std::generate_canonical<num_type,16>(gen)); //value mutation
+		root->update_boundary(lower_bound, upper_bound); //this will do nothing if mutation was a merge
 	}
 	
 	void Fern::crossover(const Fern& other) {
-		auto locus1 = select_random_node();
-		auto locus2 = other.select_random_node();
+		Node::iterator itn1(root); //new node, this tree
+		itn1.left(); //excluding the root node from the search
+		Node::iterator itn2(other.root); //new node, other tree (need const_iterator?)
+		itn2.left();
 		
+		Node::iterator locus1(itn1); //current choices
+		Node::iterator locus2(itn2); 
 		
+		vector<bool> branch_stack(); //stack recording traversal choices: left=false, right=true
+		branch_stack.push_back(false); //starting from left child of root
+		
+		unsigned int n=1; //number of nodes traversed so far
+		
+		std::random_device rd;
+		std::mt19937 gen(rd());
+		
+		bool stop = false;
+		while(!stop) {
+			if(itn1->is_leaf() || itn2->is_leaf()) { 
+				itn1.up();
+				itn2.up();
+			
+				while(branch_stack.back()) { //until we reach an unexplored right branch
+					itn1.up();
+					itn2.up();
+					branch_stack.pop_back();
+					if(branch_stack.size() == 0) { //no more unexplored branches
+						stop = true;
+						break;
+					}
+				}
+				
+				if(!stop) { 
+					itn1.right();
+					itn2.right();
+					branch_stack.back() = true;
+				}
+			} else {
+				//test current node
+				num_type chance = 1/n;
+				if( chance >= std::generate_canonical<num_type,16>(gen) ) {
+					locus1 = itn1;
+					locus2 = itn2;
+				}
+				++n;
+				
+				//next left
+				itn1.left();
+				itn2.left();
+				branch_stack.push_back(false);
+			}
+		}
+		
+		//splice branch
+		*locus1 = *locus2;
+		root->update_boundary(lower_bound, upper_bound);
+		root->update_max_bin(max_bin);
 	}
 
 } //namespace clau
-
 

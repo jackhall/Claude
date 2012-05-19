@@ -121,7 +121,7 @@ namespace clau {
 	}
 
 	void Fork::mutate(const num_type random) {
-		//flip value/convert to leaf
+		value = !value;
 	}
 	
 } //namespace clau
