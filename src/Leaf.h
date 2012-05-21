@@ -22,6 +22,7 @@
 */
 
 #include <random>
+#include <iostream>
 #include "Node.h"
 
 namespace clau {
@@ -53,6 +54,7 @@ namespace clau {
 		void mutate(rng_type& gen);
 		void split(const bool bValue);
 		void merge() {}
+		void print(std::ostream& out) const { out << "-: " << bin << std::endl; }
 		
 	}; //class Bin
 

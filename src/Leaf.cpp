@@ -24,6 +24,9 @@ namespace clau {
 	
 	//Leaf::Leaf() : Node(NULL), max_bin(0), bin(0) {}
 	
+	Leaf::Leaf(Fork* pParent)
+		: Node(pParent), max_bin(0), bin(0) {}
+	
 	Leaf::Leaf(const Leaf& rhs, Fork* pParent) 
 		: Node(pParent), max_bin(rhs.max_bin), bin(rhs.bin) {}
 	

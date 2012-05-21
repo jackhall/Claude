@@ -26,9 +26,9 @@ namespace clau {
 		: root( new Fork(NULL, false) ), upper_bound(0.0),
 		  lower_bound(0.0), max_bin(0) {}
 	
-	Fern::Fern(const num_type upperBound, const num_type lowerBound, 
+	Fern::Fern(const num_type lowerBound, const num_type upperBound, 
 		   const bin_type numBins)
-		: root( new Fork(NULL, true) ), upper_bound(upperBound),
+		: root( new Fork(NULL, false) ), upper_bound(upperBound),
 		  lower_bound(lowerBound), max_bin(numBins-1) {
 		
 		root->update_boundary(lower_bound, upper_bound);
@@ -161,6 +161,54 @@ namespace clau {
 		root->update_boundary(lower_bound, upper_bound);
 		root->update_max_bin(max_bin);
 	}
-
+	
+	std::ostream& operator<<(std::ostream& out, const Fern& fern) {
+		std::vector<bool> branch_stack;
+		Node::iterator locus(fern.root);
+		
+		out << "Interval: [" << fern.lower_bound << ", " << fern.upper_bound << "]" << std::endl;
+		out << "Number of bins: " << fern.max_bin+1 << std::endl;
+		
+		bool stop = false;
+		while(!stop) {
+			for(int i = branch_stack.size(); i>0; --i) out << "=";
+			out << *locus;
+			
+			//find new node
+			if(locus->is_leaf()) {
+				locus.up();
+			
+				while(branch_stack.back()) { //until we reach an unexplored right branch
+					locus.up();
+					branch_stack.pop_back();
+					if(branch_stack.size() == 0) { //no more unexplored branches
+						stop = true;
+						break;
+					}
+				}
+				
+				if(!stop) { 
+					locus.right();
+					branch_stack.back() = true;
+				}
+			} else {
+				locus.left();
+				branch_stack.push_back(false);
+			}
+		}
+		
+		return out;
+	}
+	
+	bool Fern::test_splitting() {
+		
+		return true;
+	}
+	
+	bool Fern::test_merging() {
+	
+		return true;
+	}
+	
 } //namespace clau
 

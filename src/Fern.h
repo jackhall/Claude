@@ -23,6 +23,7 @@
 
 #include <random>
 #include <vector>
+#include <iostream>
 #include "Node.h"
 #include "Fork.h"
 #include "Leaf.h"
@@ -45,6 +46,12 @@ namespace clau {
 	
 		void mutate();
 		void crossover(const Fern& other);
+		bin_type query(const num_type number) { return root->query(number); }
+		
+		friend std::ostream& operator<<(std::ostream& out, const Fern& fern);
+		
+		bool test_splitting();
+		bool test_merging();
 		
 	}; //class Fern
 	

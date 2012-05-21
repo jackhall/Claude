@@ -18,27 +18,23 @@
     e-mail: jackwhall7@gmail.com
 */
 
+//to test Claude, run the following from the test directory:
+//	g++ -std=c++0x -g -I../src -lClaude test_claude.cpp -o test_claude
+//	./test_claude
+
+#include <iostream>
 #include "Claude.h"
 
-namespace clau {
-
-	Node::Node() : parent(NULL) {}
+int main() {
+	using namespace std;
+	using namespace clau;
 	
-	Node::Node(Node* pParent) : parent(pParent) {}
+	Fern fern1;
+	cout << fern1 << endl;
 	
-	Node::Node(const Node& rhs) : parent(rhs.parent) {}
-
-	Node& Node::operator=(const Node& rhs) {
-		if(this != &rhs) parent = rhs.parent;
-		return *this;
-	}
+	Fern fern2(0.0, 1.0, 3);
+	cout << fern2 << endl;
 	
-	Node::~Node() {}
-	
-	std::ostream& operator<<(std::ostream& out, const Node& node) {
-		node.print(out);
-		return out;
-	}
-	
-} //namespace clau
+	return 0;
+}
 

@@ -23,6 +23,7 @@
 
 #include <cmath>
 #include <random>
+#include <iostream>
 #include "Node.h"
 
 namespace clau {
@@ -56,6 +57,8 @@ namespace clau {
 		void mutate(rng_type& gen);
 		void split(const bool bValue) {}
 		void merge();
+		
+		void print(std::ostream& out) const { out << value << ": " << boundary << std::endl; }
 		
 		bool is_left(Node* child) { return child == left; }
 		bool is_right(Node* child) { return child == right; }
