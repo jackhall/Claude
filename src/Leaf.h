@@ -21,6 +21,7 @@
     e-mail: jackwhall7@gmail.com
 */
 
+#include <random>
 #include "Node.h"
 
 namespace clau {
@@ -35,8 +36,8 @@ namespace clau {
 		bin_type max_bin, bin;
 		
 		Node* up() { return parent; }
-		Node* left() { return this; }
-		Node* right() { return this; }
+		Node* left_child() { return this; }
+		Node* right_child() { return this; }
 		
 	public:
 		Leaf() = delete;
@@ -49,7 +50,7 @@ namespace clau {
 		void update_boundary(const num_type lower_bound, const num_type upper_bound) {}
 		void update_max_bin(const bin_type nMaxBin);
 		bin_type query(const num_type number=0.0) const { return bin; }
-		void mutate(Generator& gen);
+		void mutate(rng_type& gen);
 		void split(const bool bValue);
 		void merge() {}
 		

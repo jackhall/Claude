@@ -25,7 +25,7 @@ namespace clau {
 //need to take another look at Leaf copying and creation
 
 	Fork::Fork() 
-		: parent(NULL), left(NULL), right(NULL), 
+		: Node(NULL), left(NULL), right(NULL), 
 		  boundary(0.0), value(false) {}
 	
 	Fork::Fork(Fork* pParent, const bool bValue) 
@@ -40,13 +40,15 @@ namespace clau {
 		//a "ghost" tree alongside the original one, instead of a new copy
 		//in a new place. 
 		if(rhs.left != NULL) {
-			if( rhs.left.is_leaf() ) left = new Leaf(*rhs.left, this);
-			else left = new Fork(*rhs.left, this);
+			if( rhs.left->is_leaf() ) 
+				left = new Leaf(*static_cast<Leaf*>(rhs.left), this);
+			else left = new Fork(*static_cast<Fork*>(rhs.left), this);
 		}
 		
 		if(rhs.right != NULL) {
-			if( rhs.right.is_leaf() ) right = new Leaf(*rhs.right, this);
-			else right = new Fork(*rhs.right, this);
+			if( rhs.right->is_leaf() ) 
+				right = new Leaf(*static_cast<Leaf*>(rhs.right), this);
+			else right = new Fork(*static_cast<Fork*>(rhs.right), this);
 		}
 	}
 	
@@ -67,13 +69,15 @@ namespace clau {
 			boundary = rhs.boundary;
 			
 			if(rhs.left != NULL) {
-				if( rhs.left.is_leaf() ) left = new Leaf(*rhs.left, this);
-				else left = new Fork(*rhs.left, this);
+				if( rhs.left->is_leaf() ) 
+					left = new Leaf(*static_cast<Leaf*>(rhs.left), this);
+				else left = new Fork(*static_cast<Fork*>(rhs.left), this);
 			}
 			
 			if(rhs.right != NULL) {
-				if( rhs.right.is_leaf() ) right = new Leaf(*rhs.right, this);
-				else right = new Fork(*rhs.right, this);
+				if( rhs.right->is_leaf() ) 
+					right = new Leaf(*static_cast<Leaf*>(rhs.right), this);
+				else right = new Fork(*static_cast<Fork*>(rhs.right), this);
 			}
 		}
 		
@@ -98,7 +102,7 @@ namespace clau {
 		if(value) boundary = lower_bound + ratio*(upper_bound - lower_bound);
 		else boundary = lower_bound + (1-ratio)*(upper_bound - lower_bound);
 		
-		if(child_zero!=NULL && child_one!=NULL) {
+		if(left!=NULL && right!=NULL) {
 			left->update_boundary(lower_bound, boundary);
 			right->update_boundary(boundary, upper_bound);
 		}
@@ -120,7 +124,7 @@ namespace clau {
 		else return this;
 	}
 
-	void Fork::mutate(Generator& gen) {
+	void Fork::mutate(rng_type& gen) {
 		std::bernoulli_distribution random_bits(0.5);
 		
 		if( random_bits(gen) ) merge();
@@ -138,6 +142,16 @@ namespace clau {
 			}
 			delete this;
 		}
+	}
+	
+	void Fork::replace_left(Node* child) {
+		delete left;
+		left = child;
+	}
+	
+	void Fork::replace_right(Node* child) {
+		delete right;
+		right = child;
 	}
 	
 } //namespace clau

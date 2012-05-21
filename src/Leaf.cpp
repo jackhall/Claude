@@ -24,18 +24,15 @@ namespace clau {
 	
 	//Leaf::Leaf() : Node(NULL), max_bin(0), bin(0) {}
 	
-	Leaf::Leaf(Fork* pParent, const bin_type nMaxBin, const bin_type nBin) 
-		: Node(pParent), max_bin(nMaxBin), bin(nBin) {
-		if(nBin > nMaxBin) bin = 0;	
-	}
-	
 	Leaf::Leaf(const Leaf& rhs, Fork* pParent) 
 		: Node(pParent), max_bin(rhs.max_bin), bin(rhs.bin) {}
 	
 	Leaf& Leaf::operator=(const Leaf& rhs) {
 		if(this != &rhs) {
 			max_bin = rhs.max_bin;
-			set_bin(rhs.bin);
+			if(rhs.bin > max_bin) {
+				bin = max_bin; //set randomly?
+			} else bin = rhs.bin;
 		}
 	}
 	
@@ -46,7 +43,7 @@ namespace clau {
 		if(bin > max_bin) bin = max_bin; //maybe decide on a new bin number randomly?
 	}
 	
-	void Leaf::mutate(Generator& gen) {
+	void Leaf::mutate(rng_type& gen) {
 		std::bernoulli_distribution random_bits(0.5);
 		std::uniform_int_distribution<> random_ints(0, max_bin);
 		
@@ -57,12 +54,11 @@ namespace clau {
 	void Leaf::split(const bool bValue) {
 	//deletes this object! invalidates all pointers, references, iterators to it
 		Fork* parentFork = static_cast<Fork*>(parent);
-		if(parentFork->left == this) {
-			parentFork->left = new Fork(parentFork, bValue);
+		if( parentFork->is_left(this) ) {
+			parentFork->replace_left( new Fork(parentFork, bValue) ); //deletes this instance
 		} else {
-			parentFork->right = new Fork(parentFork, bValue);
+			parentFork->replace_right( new Fork(parentFork, bValue) ); //deletes this instance
 		}
-		delete this;
 	}
 	
 } //namespace clau

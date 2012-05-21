@@ -22,6 +22,7 @@
 */
 
 #include <cmath>
+#include <random>
 #include "Node.h"
 
 namespace clau {
@@ -33,13 +34,13 @@ namespace clau {
 		right of the current interval.
 	*/
 	private: 
-		Node* left, right;
+		Node *left, *right;
 		bool value;
 		num_type boundary;
 		
 		Node* up();
-		Node* left() { return left; }
-		Node* right() { return right; }
+		Node* left_child() { return left; }
+		Node* right_child() { return right; }
 		
 	public:
 		Fork();
@@ -52,9 +53,15 @@ namespace clau {
 		void update_boundary(const num_type lower_bound, const num_type upper_bound);
 		void update_max_bin(const bin_type nMaxBin);
 		bin_type query(const num_type number) const;
-		void mutate(Generator& gen);
+		void mutate(rng_type& gen);
 		void split(const bool bValue) {}
 		void merge();
+		
+		bool is_left(Node* child) { return child == left; }
+		bool is_right(Node* child) { return child == right; }
+		
+		void replace_left(Node* child);
+		void replace_right(Node* child);
 		
 	}; //class Fork
 	

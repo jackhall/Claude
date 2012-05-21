@@ -29,20 +29,20 @@ namespace clau {
 	Fern::Fern(const num_type upperBound, const num_type lowerBound, 
 		   const bin_type numBins)
 		: root( new Fork(NULL, true) ), upper_bound(upperBound),
-		  lower_bound(lowerBound), max_bin(num_bins-1) {
+		  lower_bound(lowerBound), max_bin(numBins-1) {
 		
 		root->update_boundary(lower_bound, upper_bound);
 		root->update_max_bin(max_bin);
 	}
 	
 	Fern::Fern(const Fern& rhs)
-		: root( new Fork(rhs.root) ), upper_bound(rhs.upper_bound), 
+		: root( new Fork(*rhs.root) ), upper_bound(rhs.upper_bound), 
 		  lower_bound(rhs.lower_bound), max_bin(rhs.max_bin) {}
 	
 	Fern& Fern::operator=(const Fern& rhs) {
 		if(this != &rhs) {
 			delete root;
-			root = new Fork(rhs.root);
+			root = new Fork(*rhs.root);
 			upper_bound = rhs.upper_bound;
 			lower_bound = rhs.lower_bound;
 			max_bin = rhs.max_bin;
@@ -59,13 +59,13 @@ namespace clau {
 		itn.left(); //excluding the root node from the search
 		Node::iterator locus(itn); //current choice
 		
-		vector<bool> branch_stack(); //stack recording traversal choices: left=false, right=true
+		std::vector<bool> branch_stack; //stack recording traversal choices: left=false, right=true
 		branch_stack.push_back(false); //starting from left child of root
 		
 		unsigned int n=1; //number of nodes traversed so far
 		
 		std::random_device rd;
-		std::mt19937 gen(rd());
+		rng_type gen(rd());
 		
 		bool stop = false;
 		while(!stop) {
@@ -111,7 +111,7 @@ namespace clau {
 		Node::iterator locus1(itn1); //current choices
 		Node::iterator locus2(itn2); 
 		
-		vector<bool> branch_stack(); //stack recording traversal choices: left=false, right=true
+		std::vector<bool> branch_stack; //stack recording traversal choices: left=false, right=true
 		branch_stack.push_back(false); //starting from left child of root
 		
 		unsigned int n=1; //number of nodes traversed so far

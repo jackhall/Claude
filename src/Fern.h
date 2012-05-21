@@ -21,6 +21,8 @@
     e-mail: jackwhall7@gmail.com
 */
 
+#include <random>
+#include <vector>
 #include "Node.h"
 #include "Fork.h"
 #include "Leaf.h"

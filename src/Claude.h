@@ -21,6 +21,8 @@
     e-mail: jackwhall7@gmail.com
 */
 
+#include <random>
+
 namespace clau {
 
 	/*
@@ -36,15 +38,16 @@ namespace clau {
 		use in more than one dimension. 
 	*/
 	
-	typedef num_type float;
-	typedef bin_type unsigned short;
-	
-	#include "Node.h"
-	#include "Fork.h"
-	#include "Leaf.h"
-	#include "Fern.h"
+	typedef float num_type;
+	typedef unsigned short bin_type;
+	typedef std::mt19937 rng_type;
 
 } //namespace clau
+
+#include "Node.h"
+#include "Fork.h"
+#include "Leaf.h"
+#include "Fern.h"
 
 #endif
 

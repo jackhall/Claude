@@ -21,6 +21,8 @@
     e-mail: jackwhall7@gmail.com
 */
 
+#include <random>
+
 namespace clau {
 
 	class Node {
@@ -36,8 +38,8 @@ namespace clau {
 		Node* parent; //this is only used by iterators
 		
 		virtual Node* up() = 0;
-		virtual Node* left() = 0;
-		virtual Node* right() = 0;
+		virtual Node* left_child() = 0;
+		virtual Node* right_child() = 0;
 		
 	public:
 		Node();
@@ -51,7 +53,7 @@ namespace clau {
 					     const num_type upper_bound) = 0;
 		virtual void update_max_bin(const bin_type nMaxBin) = 0;
 		virtual bin_type query(const num_type number) const = 0;
-		virtual void mutate(Generator& gen) = 0;
+		virtual void mutate(rng_type& gen) = 0;
 		virtual void split(const bool bValue) = 0;
 		virtual void merge() = 0;
 		
@@ -72,8 +74,8 @@ namespace clau {
 			Node* operator->() { return current; }
 			
 			iterator& up() 	  { current = current->up(); 	return *this; }
-			iterator& left()  { current = current->left();  return *this; }
-			iterator& right() { current = current->right(); return *this; }
+			iterator& left()  { current = current->left_child();  return *this; }
+			iterator& right() { current = current->right_child(); return *this; }
 			
 			void replace(Node* new_node);
 			bool at_root() { return current->parent == NULL; }
