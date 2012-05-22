@@ -29,11 +29,35 @@ int main() {
 	using namespace std;
 	using namespace clau;
 	
+	cout << "Testing default construction" << endl;
 	Fern fern1;
 	cout << fern1 << endl;
 	
+	cout << "Testing copy construction" << endl;
+	Fern fern3(fern1);
+	cout << fern3 << endl;
+	
+	cout << "Testing normal construction" << endl;
 	Fern fern2(0.0, 1.0, 3);
 	cout << fern2 << endl;
+	
+	cout << "Testing splits" << endl;
+	fern2.test_splitting();
+	cout << fern2 << endl;
+	
+	cout << "Testing copies" << endl;
+	fern1.set_bounds(0.0, 1.0); 
+	fern1.set_bins(3);
+	fern1.test_copying(fern2); //doesn't work, problem with Node copy ctor
+	cout << fern1 << endl;
+	
+	cout << "Testing merges" << endl;
+	fern2.test_merging();
+	cout << fern2 << endl;
+	
+	cout << "Testing mutation" << endl;
+	
+	cout << "Testing crossover" << endl;
 	
 	return 0;
 }

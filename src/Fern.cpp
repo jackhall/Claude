@@ -54,6 +54,17 @@ namespace clau {
 		delete root;
 	}
 	
+	void Fern::set_bounds(const num_type lowerBound, const num_type upperBound) {
+		lower_bound = lowerBound;
+		upper_bound = upperBound;
+		root->update_boundary(lower_bound, upper_bound);
+	}
+	
+	void Fern::set_bins(const bin_type numBins) {
+		max_bin = numBins-1;
+		root->update_max_bin(max_bin);
+	}
+	
 	void Fern::mutate() {
 		Node::iterator itn(root); //new node
 		itn.left(); //excluding the root node from the search
@@ -201,12 +212,34 @@ namespace clau {
 	}
 	
 	bool Fern::test_splitting() {
+		Node::iterator locus(root);
+		Node::iterator root_locus(locus);
+		locus.left();
+		locus->split(true);
 		
+		locus = root_locus;
+		locus.left().right();
+		locus->split(false);
+		
+		root_locus->update_boundary(lower_bound, upper_bound);
+		root_locus->update_max_bin(max_bin);
+		return true;
+	}
+	
+	bool Fern::test_copying(const Fern& source) {
+		Node::iterator locus1(root), locus2(source.root);
+		locus1.left();
+		locus2.left();
+		*locus1 = *locus2;	
 		return true;
 	}
 	
 	bool Fern::test_merging() {
-	
+		Node::iterator locus(root);
+		locus.left();
+		locus->merge();
+		
+		root->update_max_bin(max_bin);
 		return true;
 	}
 	

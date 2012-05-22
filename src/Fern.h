@@ -43,7 +43,10 @@ namespace clau {
 		Fern(const Fern& rhs);
 		Fern& operator=(const Fern& rhs);
 		~Fern();
-	
+		
+		void set_bounds(const num_type lowerBound, const num_type upperBound);
+		void set_bins(const bin_type numBins);
+		
 		void mutate();
 		void crossover(const Fern& other);
 		bin_type query(const num_type number) { return root->query(number); }
@@ -51,6 +54,7 @@ namespace clau {
 		friend std::ostream& operator<<(std::ostream& out, const Fern& fern);
 		
 		bool test_splitting();
+		bool test_copying(const Fern& source);
 		bool test_merging();
 		
 	}; //class Fern
