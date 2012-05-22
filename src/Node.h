@@ -57,6 +57,7 @@ namespace clau {
 		virtual void mutate(rng_type& gen) = 0;
 		virtual void split(const bool bValue) = 0;
 		virtual void merge() = 0;
+		virtual void copy(const Node& other) = 0;
 		virtual void print(std::ostream& out) const = 0;
 		
 		friend std::ostream& operator<<(std::ostream& out, const Node& node);

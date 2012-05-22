@@ -48,7 +48,7 @@ int main() {
 	cout << "Testing copies" << endl;
 	fern1.set_bounds(0.0, 1.0); 
 	fern1.set_bins(3);
-	fern1.test_copying(fern2); //doesn't work, problem with Node copy ctor
+	fern1.test_copying(fern2); //fixed with major-league kludge
 	cout << fern1 << endl;
 	
 	cout << "Testing merges" << endl;
@@ -56,8 +56,22 @@ int main() {
 	cout << fern2 << endl;
 	
 	cout << "Testing mutation" << endl;
+	fern3.set_bounds(0.0, 1.0); 
+	fern3.set_bins(3);
+	fern3.mutate();
+	cout << fern3 << endl;
+	fern3.mutate();
+	cout << fern3 << endl;
 	
 	cout << "Testing crossover" << endl;
+	fern2.test_splitting();
+	cout << fern2 << endl;
+	fern2.mutate();
+	fern2.mutate();
+	cout << fern2 << endl;
+	cout << fern1 << endl;
+	fern1.crossover(fern2);
+	cout << fern1 << endl;
 	
 	return 0;
 }

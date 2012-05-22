@@ -56,6 +56,7 @@ namespace clau {
 		bin_type query(const num_type number) const;
 		void mutate(rng_type& gen);
 		void split(const bool bValue) {}
+		void copy(const Node& other);
 		void merge();
 		
 		void print(std::ostream& out) const { out << value << ": " << boundary << std::endl; }

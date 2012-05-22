@@ -54,13 +54,26 @@ namespace clau {
 		else bin = random_ints(gen);
 	}
 	
-	void Leaf::split(const bool bValue) {
+	void Leaf::split(const bool bValue) { //resulting leaves always point to bin 0
 	//deletes this object! invalidates all pointers, references, iterators to it
 		Fork* parentFork = static_cast<Fork*>(parent);
 		if( parentFork->is_left(this) ) {
 			parentFork->replace_left( new Fork(parentFork, bValue) ); //deletes this instance
 		} else {
 			parentFork->replace_right( new Fork(parentFork, bValue) ); //deletes this instance
+		}
+	}
+	
+	void Leaf::copy(const Node& other) { //kludge
+		if(other.is_leaf()) *this = *static_cast<const Leaf*>(&other);
+		else {
+			Fork* parentFork = static_cast<Fork*>(parent);
+			const Fork* other_fork = static_cast<const Fork*>(&other);
+			if( parentFork->is_left(this) ) {
+				parentFork->replace_left( new Fork(*other_fork, parentFork) ); //deletes this instance
+			} else {
+				parentFork->replace_right( new Fork(*other_fork, parentFork) ); //deletes this instance
+			}
 		}
 	}
 	

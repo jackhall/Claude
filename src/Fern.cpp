@@ -168,7 +168,7 @@ namespace clau {
 		}
 		
 		//splice branch
-		*locus1 = *locus2;
+		locus1->copy(*locus2);
 		root->update_boundary(lower_bound, upper_bound);
 		root->update_max_bin(max_bin);
 	}
@@ -230,7 +230,7 @@ namespace clau {
 		Node::iterator locus1(root), locus2(source.root);
 		locus1.left();
 		locus2.left();
-		*locus1 = *locus2;	
+		locus1->copy(*locus2);	
 		return true;
 	}
 	

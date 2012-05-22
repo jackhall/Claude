@@ -54,6 +54,7 @@ namespace clau {
 		void mutate(rng_type& gen);
 		void split(const bool bValue);
 		void merge() {}
+		void copy(const Node& other);
 		void print(std::ostream& out) const { out << "L: " << bin << "/" << max_bin << std::endl; }
 		
 	}; //class Bin

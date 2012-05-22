@@ -125,13 +125,28 @@ namespace clau {
 	}
 
 	void Fork::mutate(rng_type& gen) {
-		std::bernoulli_distribution random_bits(0.5);
+		std::bernoulli_distribution random_bits(0.5); //shortening rules too common
 		
 		if( random_bits(gen) ) merge();
 		else value = !value;
 	}
 
-	void Fork::merge() {
+	void Fork::copy(const Node& other) { //kludge
+		if(other.is_leaf()) {
+			if(parent != NULL) {
+				Fork* parentFork = static_cast<Fork*>(parent);
+				const Leaf* other_leaf = static_cast<const Leaf*>(&other);
+				if(parentFork->left == this) {
+					parentFork->left = new Leaf(*other_leaf, parentFork);
+				} else {
+					parentFork->right = new Leaf(*other_leaf, parentFork);
+				}
+				delete this;
+			}
+		} else *this = *static_cast<const Fork*>(&other);
+	}
+
+	void Fork::merge() { //kludge
 	//deletes this object! invalidates all pointers, references, iterators to it
 		if(parent != NULL) {
 			Fork* parentFork = static_cast<Fork*>(parent);
