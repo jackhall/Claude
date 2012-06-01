@@ -28,6 +28,7 @@
 
 namespace clau {
 
+	template<short D>
 	class Fork : public Node {
 	/*
 		The Fork class uses the Node interface. It also stores its boundary as a 
@@ -37,6 +38,7 @@ namespace clau {
 	private: 
 		Node *left, *right;
 		bool value;
+		short dimension;
 		num_type boundary;
 		
 		Node* up();
@@ -46,7 +48,7 @@ namespace clau {
 	public:
 		Fork();
 		Fork(Fork* pParent, const bool bValue);
-		Fork(const Fork& rhs, Fork* pParent=NULL);
+		Fork(const Fork& rhs, Fork* pParent=nullptr);
 		Fork& operator=(const Fork& rhs);
 		~Fork();
 		

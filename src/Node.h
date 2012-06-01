@@ -67,7 +67,7 @@ namespace clau {
 			Node* current;
 			
 		public:
-			iterator() : current(NULL) {}
+			iterator() : current(nullptr) {}
 			iterator(Node* node) : current(node) {}
 			iterator(const iterator& rhs) : current(rhs.current) {}
 			iterator& operator=(const iterator& rhs) 
@@ -82,7 +82,7 @@ namespace clau {
 			iterator& right() { current = current->right_child(); return *this; }
 			
 			void replace(Node* new_node);
-			bool at_root() { return current->parent == NULL; }
+			bool at_root() { return current->parent == nullptr; }
 		};
 		
 	}; //class Node
