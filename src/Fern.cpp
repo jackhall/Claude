@@ -22,6 +22,7 @@
 
 namespace clau {
 
+	//=================== Fern methods ======================
 	Fern::Fern()
 		: root( new Fork(NULL, false) ), upper_bound(0.0),
 		  lower_bound(0.0), max_bin(0) {}
@@ -60,12 +61,12 @@ namespace clau {
 		root->update_boundary(lower_bound, upper_bound);
 	}
 	
-	void Fern::set_bins(const bin_type numBins) {
+	void Fern::set_num_bins(const bin_type numBins) { //rewrite using node_handles
 		max_bin = numBins-1;
 		root->update_max_bin(max_bin);
 	}
 	
-	void Fern::mutate() {
+	void Fern::mutate() { //rewrite using node_handles
 		Node::iterator itn(root); //new node
 		itn.left(); //excluding the root node from the search
 		Node::iterator locus(itn); //current choice
@@ -113,7 +114,7 @@ namespace clau {
 		root->update_boundary(lower_bound, upper_bound); //this will do nothing if mutation was a merge
 	}
 	
-	void Fern::crossover(const Fern& other) {
+	void Fern::crossover(const Fern& other) { //rewrite using node_handles
 		Node::iterator itn1(root); //new node, this tree
 		itn1.left(); //excluding the root node from the search
 		Node::iterator itn2(other.root); //new node, other tree (need const_iterator?)
@@ -211,6 +212,7 @@ namespace clau {
 		return out;
 	}
 	
+	/*
 	bool Fern::test_splitting() {
 		Node::iterator locus(root);
 		Node::iterator root_locus(locus);
@@ -241,7 +243,13 @@ namespace clau {
 		
 		root->update_max_bin(max_bin);
 		return true;
-	}
+	} 
+	*/
+	
+	//==================== Fern::Fork methods ===================
+	
+
+	//==================== Fern::node_handle methods ============
 	
 } //namespace clau
 

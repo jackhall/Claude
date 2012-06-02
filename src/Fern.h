@@ -34,60 +34,68 @@ namespace clau {
 	typedef unsigned short dim_type;
 	typedef std::mt19937 rng_type;
 	
+	struct Interval { 
+		num_type lower;
+		num_type upper;
+	};
+	
 	template<dim_type D>
 	class Fern {
 	public:
-		class iterator; //forward declaration as a friend class for Node and Fork
+		class node_handle; //forward declaration as a friend class for Node and Fork
 		
-		struct Interval { 
-			num_type lower;
-			num_type upper;
-		};
-		
-	private:	
+	private:
 		struct Node {
 		/*
-			The node class describes the behavior that roots, forks, and leaves
-			have in common. This is mainly a common interface for communication
-			between nodes. All nodes also have a parent; the root node is simply
-			sets this pointer to NULL. All new nodes must be adjusted to their 
-			context after creation, whether it be update_max_bin() for leaves or
-			update_boundary() for forks.
+			The Node class provides a common interface for Forks and Leaves. 
 		*/
 		protected:
-			Node* parent; //this is only used by iterators
+			Node* parent; //this is only used by node_handles
 			bool leaf;
-		
-			friend class iterator;
+			friend class node_handle;
 		
 		public:
-			Node();
-			explicit Node(Node* pParent);
-			Node(const Node& rhs);
-			Node& operator=(const Node& rhs);
-			virtual ~Node();
-			
-			virtual void mutate(rng_type& gen) = 0;
-			virtual void copy_from(const Node& other) = 0;
-			virtual void print(std::ostream& out) const = 0;
+			Node() = delete;
+			Node(Node* pParent, const bool bLeaf) : parent(pParent), leaf(bLeaf) {}
+			Node(const Node& rhs) = default;
+			Node& operator=(const Node& rhs) = default;
+			virtual ~Node() = default;
 		}; //class Node
+	
+		struct Fork : public Node;
 
+		struct Leaf : public Node {
+		/*
+			A Leaf adds a bin number to the Node interface. Its version of query 
+			returns the bin number. 
+		*/
+		private:
+			bin_type bin;
+			friend class node_handle;
+		
+		public:
+			Leaf() = delete;
+			Leaf(Fork* pParent, const bin_type nBin) : Node(pParent, true), bin(nBin) {}
+			Leaf(const Leaf& rhs) = default;
+			Leaf& operator=(const Leaf& rhs) = default;
+			virtual ~Leaf() = default;
+			
+			bin_type query() const { return bin; }
+		}; //class Leaf
+	
 		struct Fork : public Node {
 		/*
-			The Fork class uses the Node interface. It also stores its boundary as a 
-			num_type and a bool that tells whether the boundary is on the left or 
-			right of the current interval.
+			The Fork class stores its boundary as a num_type and a bool that tells 
+			whether the boundary is on the left or right of the current region in
+			the dimension specified. Note that the boundary is stored for convenience 
+			only; it is not an independent property. 
 		*/
 		private: 
 			Node *left, *right;
 			bool value;
 			dim_type dimension;
 			num_type boundary;
-			
-			friend class iterator;
-			
-			void replace_left(Node* child);
-			void replace_right(Node* child);
+			friend class node_handle;
 		
 		public:
 			Fork();
@@ -95,46 +103,17 @@ namespace clau {
 			Fork(const Fork& rhs, Fork* pParent=nullptr);
 			Fork& operator=(const Fork& rhs);
 			virtual ~Fork();
-		
-			void update_boundary(const Interval bounds);
+			
 			bin_type query(const array<num_type, D> point) const;
-			void merge();
-			
-			virtual void mutate(rng_type& gen);
-			virtual void copy_from(const Node& other);
-			virtual void print(std::ostream& out) const { out << value << ": " << boundary << std::endl; }
+			void update_boundary(const array<Interval, D> bounds);
 		}; //class Fork
-		
-		struct Leaf : public Node {
-		/*
-			A Leaf uses the Node interface, adding a bin number. Its version
-			of update_boundary does nothing, as it has no boundary. 
-			Its version of query returns the bin number. 
-		*/
-		private:
-			bin_type max_bin, bin;
-		
-		public:
-			Leaf() = delete;
-			explicit Leaf(Fork* pParent);
-			Leaf(const Leaf& rhs, Fork* pParent);
-			Leaf& operator=(const Leaf& rhs);
-			virtual ~Leaf();
-		
-			void update_max_bin(const bin_type nMaxBin);
-			bin_type query() const { return bin; }
-			void split(const bool bValue, const dim_type dimension=1);
-			
-			virtual void mutate(rng_type& gen);
-			virtual void copy_from(const Node& other);
-			virtual void print(std::ostream& out) const { out << "L: " << bin << "/" << max_bin << std::endl; }
-		}; //class Leaf
 
 		Fork* root;
 		array<Interval, D> root_region;
 		bin_type max_bin;
+		rng_type generator;
 		
-		friend iterator;
+		friend node_handle;
 		
 	public:
 		Fern();
@@ -145,11 +124,12 @@ namespace clau {
 		~Fern();
 		
 		void set_bounds(const array<Interval, D> bounds);
-		void set_bins(const bin_type numBins);
+		void set_num_bins(const bin_type numBins);
 		
 		array<Interval, D> get_bounds() const { return root_region; }
 		Interval get_bounds(const dim_type dimension) const 
 			{ return root_region[dimension-1] };
+		bin_type get_num_bins() const { return max_bin+1; }
 		
 		void mutate();
 		void crossover(const Fern& other);
@@ -157,45 +137,59 @@ namespace clau {
 		
 		friend std::ostream& operator<<(std::ostream& out, const Fern& fern);
 
-		class iterator {
+		class node_handle {
+		/*
+			node_handle provides safe external access to Nodes. 
+		*/
 		private:
 			Node* current;
-			iterator(Node* root) : current(root) {}
-			friend iterator Fern::begin();
+			Fern* fern;
+			
+			node_handle(Node* root) : current(root) {}
+			friend node_handle Fern::begin();
 			
 		public:
-			iterator() : current(nullptr) {}
-			iterator(const iterator& rhs) = default;
-			iterator& operator=(const iterator& rhs) = default;
-			~iterator = default;
+			node_handle() : current(nullptr) {}
+			node_handle(const node_handle& rhs) = default;
+			node_handle& operator=(const node_handle& rhs) = default;
+			~node_handle = default;
 			
-			Node& operator*() { return *current; }
-			Node* operator->() { return current; }
+			node_handle& up() { 
+				if(current->parent != nullptr) current = fork->parent; 
+				return *this;
+			}
 			
-			void up() { if(current->parent != nullptr) current = fork->parent; }
-			
-			void left() { 
+			node_handle& left() { 
 				if(!current->leaf) { 
 					Fork* fork_ptr = static_cast<Fork*>(current);
 					current = fork_ptr->left; 
 				}
+				return *this;
 			}
 			
-			void right() { 
+			node_handle& right() { 
 				if(!current->leaf) {
 					Fork* fork_ptr = static_cast<Fork*>(current);
 					current = fork_ptr->right; 
 				}
+				return *this;
 			}
 			
-			void next_leaf();
+			void mutate();
+			void splice(const node_handle& other);
+			
+			bool split_leaf();
+			bool set_leaf_bin(const bin_type new_bin);
+			
+			bool merge_fork();
+			bool set_fork_dimension(const dim_type new_dimension);
+			bool set_fork_value(const bool new_value);
 			
 			bool is_leaf() const { return current->leaf; }
 			bool is_root() const { return current->parent == nullptr; }
-			
-		}; //class iterator
+		}; //class node_handle
 		
-		iterator begin() { return iterator(root); }
+		node_handle begin() { return node_handle(root); }
 		
 	}; //class Fern
 	
