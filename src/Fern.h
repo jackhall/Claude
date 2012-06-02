@@ -24,6 +24,7 @@
 #include <cmath>
 #include <random>
 #include <vector>
+#include <array>
 #include <iostream>
 
 namespace clau {
@@ -33,15 +34,21 @@ namespace clau {
 	typedef unsigned short dim_type;
 	typedef std::mt19937 rng_type;
 	
+	template<dim_type D>
 	class Fern {
 	public:
-		class iterator; //forward declaration as a friend class for Node, Fork and Leaf
+		class iterator; //forward declaration as a friend class for Node and Fork
+		
+		struct Interval { 
+			num_type lower;
+			num_type upper;
+		};
 		
 	private:	
 		struct Node {
 		/*
 			The node class describes the behavior that roots, forks, and leaves
-			have in common. This is mainly an common interface for communication
+			have in common. This is mainly a common interface for communication
 			between nodes. All nodes also have a parent; the root node is simply
 			sets this pointer to NULL. All new nodes must be adjusted to their 
 			context after creation, whether it be update_max_bin() for leaves or
@@ -51,15 +58,14 @@ namespace clau {
 			Node* parent; //this is only used by iterators
 			bool leaf;
 		
+			friend class iterator;
+		
 		public:
 			Node();
 			explicit Node(Node* pParent);
 			Node(const Node& rhs);
 			Node& operator=(const Node& rhs);
 			virtual ~Node();
-		
-			Node* up() const { return parent; }
-			bool is_leaf() const { return leaf; };
 			
 			virtual void mutate(rng_type& gen) = 0;
 			virtual void copy_from(const Node& other) = 0;
@@ -79,6 +85,9 @@ namespace clau {
 			num_type boundary;
 			
 			friend class iterator;
+			
+			void replace_left(Node* child);
+			void replace_right(Node* child);
 		
 		public:
 			Fork();
@@ -87,19 +96,13 @@ namespace clau {
 			Fork& operator=(const Fork& rhs);
 			virtual ~Fork();
 		
-			void update_boundary(const num_type lower_bound, const num_type upper_bound);
-			bin_type query(const num_type number) const;
+			void update_boundary(const Interval bounds);
+			bin_type query(const array<num_type, D> point) const;
 			void merge();
 			
 			virtual void mutate(rng_type& gen);
 			virtual void copy_from(const Node& other);
 			virtual void print(std::ostream& out) const { out << value << ": " << boundary << std::endl; }
-		
-			bool is_left(Node* child) { return child == left; }
-			bool is_right(Node* child) { return child == right; }
-		
-			void replace_left(Node* child);
-			void replace_right(Node* child);
 		}; //class Fork
 		
 		struct Leaf : public Node {
@@ -128,34 +131,71 @@ namespace clau {
 		}; //class Leaf
 
 		Fork* root;
-		num_type upper_bound, lower_bound;
+		array<Interval, D> root_region;
 		bin_type max_bin;
-		const dim_type dimensions;
+		
+		friend iterator;
 		
 	public:
 		Fern();
-		Fern(const num_type lowerBound, const num_type upperBound, 
+		Fern(const array<num_type, D> lowerBound, const array<num_type, D> upperBound, 
 		     const bin_type numBins);
 		Fern(const Fern& rhs);
 		Fern& operator=(const Fern& rhs);
 		~Fern();
 		
-		void set_bounds(const num_type lowerBound, const num_type upperBound);
+		void set_bounds(const array<Interval, D> bounds);
 		void set_bins(const bin_type numBins);
+		
+		array<Interval, D> get_bounds() const { return root_region; }
+		Interval get_bounds(const dim_type dimension) const 
+			{ return root_region[dimension-1] };
 		
 		void mutate();
 		void crossover(const Fern& other);
-		bin_type query(const num_type number) { return root->query(number); }
+		bin_type query(const array<num_type, D> point) { return root->query(point); }
 		
 		friend std::ostream& operator<<(std::ostream& out, const Fern& fern);
-		
-		bool test_splitting();
-		bool test_copying(const Fern& source);
-		bool test_merging();
 
 		class iterator {
-			//where does randomness live? Node methods should probably be deterministic
+		private:
+			Node* current;
+			iterator(Node* root) : current(root) {}
+			friend iterator Fern::begin();
+			
+		public:
+			iterator() : current(nullptr) {}
+			iterator(const iterator& rhs) = default;
+			iterator& operator=(const iterator& rhs) = default;
+			~iterator = default;
+			
+			Node& operator*() { return *current; }
+			Node* operator->() { return current; }
+			
+			void up() { if(current->parent != nullptr) current = fork->parent; }
+			
+			void left() { 
+				if(!current->leaf) { 
+					Fork* fork_ptr = static_cast<Fork*>(current);
+					current = fork_ptr->left; 
+				}
+			}
+			
+			void right() { 
+				if(!current->leaf) {
+					Fork* fork_ptr = static_cast<Fork*>(current);
+					current = fork_ptr->right; 
+				}
+			}
+			
+			void next_leaf();
+			
+			bool is_leaf() const { return current->leaf; }
+			bool is_root() const { return current->parent == nullptr; }
+			
 		}; //class iterator
+		
+		iterator begin() { return iterator(root); }
 		
 	}; //class Fern
 	
