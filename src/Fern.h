@@ -45,6 +45,11 @@ namespace clau {
 		class node_handle; //forward declaration as a friend class for Node and Fork
 		
 	private:
+		struct Division {
+			bool bit;
+			dim_type dimension;
+		};
+	
 		struct Node {
 		/*
 			The Node class provides a common interface for Forks and Leaves. 
@@ -92,15 +97,15 @@ namespace clau {
 		*/
 		private: 
 			Node *left, *right;
-			bool value;
-			dim_type dimension;
+			Division value;
 			num_type boundary;
 			friend class node_handle;
 		
 		public:
-			Fork();
-			Fork(Fork* pParent, const bool bValue);
-			Fork(const Fork& rhs, Fork* pParent=nullptr);
+			Fork() = delete;
+			Fork(Fork* pParent, const Division cValue, 
+			     const bin_type left_bin, const bin_type right_bin);
+			Fork(const Fork& rhs);
 			Fork& operator=(const Fork& rhs);
 			virtual ~Fork();
 			

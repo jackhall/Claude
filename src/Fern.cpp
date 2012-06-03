@@ -247,7 +247,94 @@ namespace clau {
 	*/
 	
 	//==================== Fern::Fork methods ===================
+	template<dim_type D>
+	Fern<D>::Fork::Fork(Fork* pParent, const Division cValue, 
+			    const bin_type left_bin, const bin_type right_bin) 
+		: Node(pParent, false), value(cValue) {
+		//does not set boundary! This should be done by node_handle from the root node
+		left  = new Leaf(this, left_bin);
+		right = new Leaf(this, right_bin);
+	}
 	
+	template<dim_type D>
+	Fern<D>::Fork::Fork(const Fork& rhs, Fork* pParent=nullptr) 
+		: Node(pParent, false), value(rhs.value), boundary(rhs.boundary) {
+		//copy left subtree
+		if( rhs.left->is_leaf() ) left = new Leaf( *static_cast<Leaf*>(rhs.left) );
+		else 			  left = new Fork( *static_cast<Fork*>(rhs.left) );
+		left->parent = this;
+		
+		//copy right subtree
+		if( rhs.right->is_leaf() ) right = new Leaf( *static_cast<Leaf*>(rhs.right) );
+		else 			   right = new Fork( *static_cast<Fork*>(rhs.right) );
+		right->parent = this;
+	}
+	
+	template<dim_type D>
+	Fern<D>::Fork&  Fern<D>::Fork::operator=(const Fork& rhs) {
+		//keeps its place in its original tree (does not copy parent pointer)
+		value = rhs.value;
+		boundary = rhs.boundary; //assumes identical context, may need to update after copy
+		
+		//replace left subtree
+		delete left;
+		left = nullptr;
+	
+		if( rhs.left->is_leaf() ) left = new Leaf( *static_cast<Leaf*>(rhs.left) );
+		else 			  left = new Fork( *static_cast<Fork*>(rhs.left) );
+		left->parent = this;
+		
+		//replace right subtree
+		delete right;
+		right = nullptr;
+		
+		if( rhs.right->is_leaf() ) right = new Leaf( *static_cast<Leaf*>(rhs.right) );
+		else 			   right = new Fork( *static_cast<Fork*>(rhs.right) );
+		right->parent = this;
+		
+		return *this;
+	}
+	
+	template<dim_type D>
+	Fern<D>::Fork::~Fork() {
+		delete left;
+		left = nullptr;
+
+		delete right;
+		right = nullptr;
+	}
+	
+	template<dim_type D>
+	bin_type Fern<D>::Fork::query(const array<num_type, D> point) const {
+		if(point[value.dimension-1] < boundary) {
+			if(left->leaf) return static_cast<Leaf*>(left)->query();
+			else return static_cast<Fork*>(left)->query(point);
+		} else {
+			if(right->leaf) return static_cast<Leaf*>(right)->query();
+			else return static_cast<Fork*>(right)->query(point);
+		}
+	}
+	
+	template<dim_type D>
+	void Fern<D>::Fork::update_boundary(const std::array<Interval, D> bounds) {
+		num_type ratio = 2.0/(1.0 + sqrt(5));
+		Interval interval = bounds[value.dimension-1];
+		
+		if(value.bit) boundary = interval.lower + ratio*(interval.upper - interval.lower);
+		else boundary = interval.lower + (1-ratio)*(interval.upper - interval.lower);
+		
+		if(!left->leaf) {
+			std::array<Interval, D> left_bounds = bounds;
+			left_bounds[value.dimension-1].upper = boundary;
+			static_cast<Fork*>(left)->update_boundary(left_bounds);
+		}
+		
+		if(!right->leaf) {
+			std::array<Interval, D> right_bounds = bounds;
+			right_bounds[value.dimension-1].lower = boundary;
+			static_cast<Fork*>(right)->update_boundary(right_bounds);
+		}
+	}
 
 	//==================== Fern::node_handle methods ============
 	
