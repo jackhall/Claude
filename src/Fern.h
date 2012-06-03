@@ -80,7 +80,8 @@ namespace clau {
 		
 		public:
 			Leaf() = delete;
-			Leaf(Fork* pParent, const bin_type nBin) : Node(pParent, true), bin(nBin) {}
+			Leaf(Fork* pParent, const bin_type nBin) 
+				: Node(pParent, true), bin(nBin) {}
 			Leaf(const Leaf& rhs) = default;
 			Leaf& operator=(const Leaf& rhs) = default;
 			virtual ~Leaf() = default;
@@ -92,8 +93,8 @@ namespace clau {
 		/*
 			The Fork class stores its boundary as a num_type and a bool that tells 
 			whether the boundary is on the left or right of the current region in
-			the dimension specified. Note that the boundary is stored for convenience 
-			only; it is not an independent property. 
+			the dimension specified. Note that the boundary is stored for 
+			convenience only; it is not an independent property. 
 		*/
 		private: 
 			Node *left, *right;
@@ -183,12 +184,12 @@ namespace clau {
 			void mutate();
 			void splice(const node_handle& other);
 			
-			bool split_leaf();
+			bool split_leaf(const Division new_value);
 			bool set_leaf_bin(const bin_type new_bin);
 			
 			bool merge_fork();
 			bool set_fork_dimension(const dim_type new_dimension);
-			bool set_fork_value(const bool new_value);
+			bool set_fork_bit(const bool new_bit);
 			
 			bool is_leaf() const { return current->leaf; }
 			bool is_root() const { return current->parent == nullptr; }
@@ -199,6 +200,8 @@ namespace clau {
 	}; //class Fern
 	
 } //namespace clau
+
+#include "Fern.cpp"
 
 #endif
 

@@ -1,3 +1,6 @@
+#ifndef Fern_cpp
+#define Fern_cpp
+
 /*
     Claude: a real-to-discrete coding scheme based on spiraling trees
     Copyright (C) 2012  Jack Hall
@@ -17,8 +20,6 @@
     
     e-mail: jackwhall7@gmail.com
 */
-
-#include "Claude.h"
 
 namespace clau {
 
@@ -337,6 +338,116 @@ namespace clau {
 	}
 
 	//==================== Fern::node_handle methods ============
+	template<dim_type D>
+	void Fern<D>::node_handle::mutate() {}
+	
+	template<dim_type D>
+	void Fern<D>::node_handle::splice(const node_handle& other) {}
+	
+	template<dim_type D>
+	bool Fern<D>::node_handle::split_leaf(const Division new_value) {
+		//returns false for forks or if leaf is a ghost
+		if( current->leaf ) {
+			
+			Leaf* leaf_ptr = static_cast<Leaf*>(current);
+			bin_type kept_bin = leaf_ptr->bin; //same for both new leaves
+			up();
+			Fork* parent_ptr = static_cast<Fork*>(current);
+			if( parent_ptr->left == leaf_ptr ) {
+			
+				delete leaf_ptr;
+				parent_ptr->left = new Fork(parent_ptr, new_value, 
+							    kept_bin, kept_bin);
+				left();
+				return true;
+			
+			} else if ( parent_ptr->right == leaf_ptr ) {
+			
+				delete leaf_ptr;
+				parent_ptr->right = new Fork(parent_ptr, new_value, 
+							     kept_bin, kept_bin);
+				right();
+				return true;
+			
+			} else {
+				current = leaf_ptr;
+				return false; //leaf is a ghost
+			}
+			
+		} else return false; //current points to a fork
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::node_handle::set_leaf_bin(const bin_type new_bin) {
+		//returns false for forks or if new_bin is out-of-range
+		if( current->leaf && (new_bin <= fern->max_bin) ) {
+		
+			static_cast<Leaf*>(current)->bin = new_bin;
+			return true;
+			
+		} else return false;
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::node_handle::merge_fork() {
+		//returns false for leaves, if both children are not leaves,
+		// or if fork is a ghost or root
+		if( !current->leaf && !is_root() ) {
+			Fork* fork_ptr = static_cast<Fork*>(current);
+			if(fork_ptr->left->leaf && fork_ptr->right->leaf) {
+			
+				//either keep bin of larger interval or left leaf 
+				bin_type kept_bin = static_cast<Leaf*>(fork_ptr->left)->bin;
+				up();
+				Fork* parent_ptr = static_cast<Fork*>(current); 
+				if( parent_ptr->left == fork_ptr ) {
+				
+					delete fork_ptr;
+					parent_ptr->left = new Leaf(parent_ptr, kept_bin);
+					left();
+					return true;
+					
+				} else if( parent_ptr->right == fork_ptr) {
+				
+					delete fork_ptr;
+					parent_ptr->right = new Leaf(parent_ptr, kept_bin);
+					right();
+					return true;
+					
+				} else {
+					current = fork_ptr; //return to original node
+					return false; //fork is a ghost
+				}
+				
+			} else return false; //both children are not leaves
+		} else return false; //current points to a leaf or root
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::node_handle::set_fork_dimension(const dim_type new_dimension) {
+		//returns false for leaves or if new_dimension is out-of-range
+		if( !current->leaf && (new_dimension <= D) && (new_dimension > 0) ) {
+		
+			static_cast<Fork*>(current)->value.dimension = new_dimension;
+			fern->root->update_boundary(root_region);
+			return true;
+			
+		} else return false;
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::node_handle::set_fork_bit(const bool new_bit) {
+		//returns false for leaves
+		if( !current->leaf ) {
+		
+			static_cast<Fork*>(current)->value.bit = new_bit;
+			fern->root->update_boundary(root_region);
+			return true;
+			
+		} else return false;
+	}
 	
 } //namespace clau
+
+#endif
 
