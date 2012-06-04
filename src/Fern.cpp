@@ -24,12 +24,12 @@
 namespace clau {
 
 	//=================== Fern methods ======================
-	Fern::Fern()
+	Fern::Fern() //take another look
 		: root( new Fork(NULL, false) ), upper_bound(0.0),
 		  lower_bound(0.0), max_bin(0) {}
 	
 	Fern::Fern(const num_type lowerBound, const num_type upperBound, 
-		   const bin_type numBins)
+		   const bin_type numBins) //take another look
 		: root( new Fork(NULL, false) ), upper_bound(upperBound),
 		  lower_bound(lowerBound), max_bin(numBins-1) {
 		
@@ -37,11 +37,11 @@ namespace clau {
 		root->update_max_bin(max_bin);
 	}
 	
-	Fern::Fern(const Fern& rhs)
+	Fern::Fern(const Fern& rhs) //take another look
 		: root( new Fork(*rhs.root) ), upper_bound(rhs.upper_bound), 
 		  lower_bound(rhs.lower_bound), max_bin(rhs.max_bin) {}
 	
-	Fern& Fern::operator=(const Fern& rhs) {
+	Fern& Fern::operator=(const Fern& rhs) { //take another look
 		if(this != &rhs) {
 			delete root;
 			root = new Fork(*rhs.root);
@@ -56,7 +56,7 @@ namespace clau {
 		delete root;
 	}
 	
-	void Fern::set_bounds(const num_type lowerBound, const num_type upperBound) {
+	void Fern::set_bounds(const num_type lowerBound, const num_type upperBound) { //update to use Interval
 		lower_bound = lowerBound;
 		upper_bound = upperBound;
 		root->update_boundary(lower_bound, upper_bound);
@@ -64,115 +64,17 @@ namespace clau {
 	
 	void Fern::set_num_bins(const bin_type numBins) { //rewrite using node_handles
 		max_bin = numBins-1;
-		root->update_max_bin(max_bin);
+		root->update_max_bin(max_bin); //no longer a method of Node
 	}
 	
 	void Fern::mutate() { //rewrite using node_handles
-		Node::iterator itn(root); //new node
-		itn.left(); //excluding the root node from the search
-		Node::iterator locus(itn); //current choice
-		
-		std::vector<bool> branch_stack; //stack recording traversal choices: left=false, right=true
-		branch_stack.push_back(false); //starting from left child of root
-		
-		unsigned int n=1; //number of nodes traversed so far
-		
-		std::random_device rd;
-		rng_type gen(rd());
-		
-		bool stop = false;
-		while(!stop) {
-			//test current node
-			num_type chance = 1/n;
-			if( chance >= std::generate_canonical<num_type,16>(gen) ) locus = itn;
-			++n;
-			
-			//find new node
-			if(itn->is_leaf()) {
-				itn.up();
-			
-				while(branch_stack.back()) { //until we reach an unexplored right branch
-					itn.up();
-					branch_stack.pop_back();
-					if(branch_stack.size() == 0) { //no more unexplored branches
-						stop = true;
-						break;
-					}
-				}
-				
-				if(!stop) { 
-					itn.right();
-					branch_stack.back() = true;
-				}
-			} else {
-				itn.left();
-				branch_stack.push_back(false);
-			}
-		}
-		
-		locus->mutate(gen); //this may invalidate locus iterator, so don't touch it after this
-		root->update_max_bin(max_bin); //necessary for all merging and splitting mutations
-		root->update_boundary(lower_bound, upper_bound); //this will do nothing if mutation was a merge
+		//get random_node
+		//mutate
 	}
 	
 	void Fern::crossover(const Fern& other) { //rewrite using node_handles
-		Node::iterator itn1(root); //new node, this tree
-		itn1.left(); //excluding the root node from the search
-		Node::iterator itn2(other.root); //new node, other tree (need const_iterator?)
-		itn2.left();
-		
-		Node::iterator locus1(itn1); //current choices
-		Node::iterator locus2(itn2); 
-		
-		std::vector<bool> branch_stack; //stack recording traversal choices: left=false, right=true
-		branch_stack.push_back(false); //starting from left child of root
-		
-		unsigned int n=1; //number of nodes traversed so far
-		
-		std::random_device rd;
-		std::mt19937 gen(rd());
-		
-		bool stop = false;
-		while(!stop) {
-			if(itn1->is_leaf() || itn2->is_leaf()) { 
-				itn1.up();
-				itn2.up();
-			
-				while(branch_stack.back()) { //until we reach an unexplored right branch
-					itn1.up();
-					itn2.up();
-					branch_stack.pop_back();
-					if(branch_stack.size() == 0) { //no more unexplored branches
-						stop = true;
-						break;
-					}
-				}
-				
-				if(!stop) { 
-					itn1.right();
-					itn2.right();
-					branch_stack.back() = true;
-				}
-			} else {
-				//test current node
-				num_type chance = 1/n;
-				if( chance >= std::generate_canonical<num_type,16>(gen) ) {
-					locus1 = itn1;
-					locus2 = itn2;
-				}
-				++n;
-				
-				//next left
-				itn1.left();
-				itn2.left();
-				branch_stack.push_back(false);
-			}
-		}
-		
-		//splice branch
-		locus1->copy(*locus2);
-		root->update_boundary(lower_bound, upper_bound);
-		root->update_max_bin(max_bin);
+		//get random_analagous
+		//splice
 	}
 	
 	std::ostream& operator<<(std::ostream& out, const Fern& fern) {
@@ -273,26 +175,28 @@ namespace clau {
 	
 	template<dim_type D>
 	Fern<D>::Fork&  Fern<D>::Fork::operator=(const Fork& rhs) {
-		//keeps its place in its original tree (does not copy parent pointer)
-		value = rhs.value;
-		boundary = rhs.boundary; //assumes identical context, may need to update after copy
-		
-		//replace left subtree
-		delete left;
-		left = nullptr;
 	
-		if( rhs.left->is_leaf() ) left = new Leaf( *static_cast<Leaf*>(rhs.left) );
-		else 			  left = new Fork( *static_cast<Fork*>(rhs.left) );
-		left->parent = this;
+		if( this != &rhs ) {
+			//keeps its place in its original tree (does not copy parent pointer)
+			value = rhs.value;
+			boundary = rhs.boundary; //assumes identical context, may need to update after copy
 		
-		//replace right subtree
-		delete right;
-		right = nullptr;
+			//replace left subtree
+			delete left;
+			left = nullptr;
+	
+			if( rhs.left->is_leaf() ) left = new Leaf( *static_cast<Leaf*>(rhs.left) );
+			else 			  left = new Fork( *static_cast<Fork*>(rhs.left) );
+			left->parent = this;
 		
-		if( rhs.right->is_leaf() ) right = new Leaf( *static_cast<Leaf*>(rhs.right) );
-		else 			   right = new Fork( *static_cast<Fork*>(rhs.right) );
-		right->parent = this;
+			//replace right subtree
+			delete right;
+			right = nullptr;
 		
+			if( rhs.right->is_leaf() ) right = new Leaf( *static_cast<Leaf*>(rhs.right) );
+			else 			   right = new Fork( *static_cast<Fork*>(rhs.right) );
+			right->parent = this;
+		}
 		return *this;
 	}
 	
@@ -306,7 +210,7 @@ namespace clau {
 	}
 	
 	template<dim_type D>
-	bin_type Fern<D>::Fork::query(const array<num_type, D> point) const {
+	bin_type Fern<D>::Fork::query(const std::array<num_type, D> point) const {
 		if(point[value.dimension-1] < boundary) {
 			if(left->leaf) return static_cast<Leaf*>(left)->query();
 			else return static_cast<Fork*>(left)->query(point);
@@ -339,23 +243,118 @@ namespace clau {
 
 	//==================== Fern::node_handle methods ============
 	template<dim_type D>
-	void Fern<D>::node_handle::mutate() {}
+	Fern<D>::node_handle&  Fern<D>::node_handle::random_node() {
+		auto start = current; //save current position
+		while( !is_root() ) up(); //go to root
+		auto choice = current; 
+		
+		std::vector<bool> branch_stack; //stack recording traversal choices: left=false, right=true
+		unsigned int n=1; //number of nodes traversed so far
+		while(true) { 
+			//test current node
+			if( (1.0/n) >= std::generate_canonical<num_type,16>(fern->generator) ) 
+				choice = current;
+			++n;
+			
+			//find new node
+			if( is_leaf() ) {
+			
+				up();
+				while(branch_stack.back()) { //until we reach an unexplored right branch
+					up();
+					branch_stack.pop_back();
+					if(branch_stack.size() == 0) { //no more unexplored branches
+						current = choice;
+						return *this;
+					}
+				}
+				
+				right();
+				branch_stack.back() = true;
+	
+			} else {
+				left();
+				branch_stack.push_back(false);
+			}
+		}
+	}
 	
 	template<dim_type D>
-	void Fern<D>::node_handle::splice(const node_handle& other) {}
+	void Fern<D>::node_handle::mutate_value() {
+		if( is_leaf() ) {
+			
+			std::uniform_int_distribution random_int(0, fern->max_bin);
+			set_leaf_bin( random_int(fern->generator) );
+			
+		} else {
+			
+			std::bernoulli_distribution random_bit(0.5);
+			if( random_bit(fern->generator) ) {
+				std::uniform_int_distribution random_int(1, D);
+				set_fork_dimension( random_int(fern->generator) );
+			} else set_fork_bit( random_bit(fern->generator) );
+		}
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::node_handle::mutate_structure() {
+		//returns false for ghosts, root or forks that don't have two leaf-children
+		if( is_leaf() ) {
+		
+			std::bernoulli_distribution random_bit(0.5);
+			std::uniform_int_distribution random_int(1, D);
+			Division new_division = { random_bit(fern->generator), 
+						  random_int(fern->generator) };
+			return split_leaf(new_division); //performs ghost check
+			
+		} else return merge_fork(); //performs root, ghost and child checks
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::node_handle::splice(const node_handle& other) {
+		//returns false if current points to a ghost or root
+		if( !is_root() ) {
+			auto target_ptr = current;
+			up();
+			auto parent_ptr = static_cast<Fork*>(current);
+			if( parent_ptr->left == target_ptr ) {
+			
+				delete target_ptr;
+				target_ptr = nullptr;
+				if( other.is_leaf() ) 
+					parent_ptr->left = new Leaf( *static_cast<Leaf*>(other.current) );
+				else 	parent_ptr->left = new Fork( *static_cast<Fork*>(other.current) );
+				return true;
+				
+			} else if( parent_ptr->right == target_ptr ) {
+			
+				delete target_ptr;
+				target_ptr = nullptr;
+				if( other.is_leaf() ) 
+					parent_ptr->right = new Leaf( *static_cast<Leaf*>(other.current) );
+				else 	parent_ptr->right = new Fork( *static_cast<Fork*>(other.current) );
+				return true;
+			
+			} else {
+				current = target_ptr;
+				return false; //current points to a ghost
+			}
+		} else return false; //current points to root
+	}
 	
 	template<dim_type D>
 	bool Fern<D>::node_handle::split_leaf(const Division new_value) {
 		//returns false for forks or if leaf is a ghost
 		if( current->leaf ) {
 			
-			Leaf* leaf_ptr = static_cast<Leaf*>(current);
+			auto leaf_ptr = static_cast<Leaf*>(current);
 			bin_type kept_bin = leaf_ptr->bin; //same for both new leaves
 			up();
-			Fork* parent_ptr = static_cast<Fork*>(current);
+			auto parent_ptr = static_cast<Fork*>(current);
 			if( parent_ptr->left == leaf_ptr ) {
 			
 				delete leaf_ptr;
+				leaf_ptr = nullptr;
 				parent_ptr->left = new Fork(parent_ptr, new_value, 
 							    kept_bin, kept_bin);
 				left();
@@ -364,6 +363,7 @@ namespace clau {
 			} else if ( parent_ptr->right == leaf_ptr ) {
 			
 				delete leaf_ptr;
+				leaf_ptr = nullptr;
 				parent_ptr->right = new Fork(parent_ptr, new_value, 
 							     kept_bin, kept_bin);
 				right();
@@ -393,16 +393,17 @@ namespace clau {
 		//returns false for leaves, if both children are not leaves,
 		// or if fork is a ghost or root
 		if( !current->leaf && !is_root() ) {
-			Fork* fork_ptr = static_cast<Fork*>(current);
+			auto fork_ptr = static_cast<Fork*>(current);
 			if(fork_ptr->left->leaf && fork_ptr->right->leaf) {
 			
 				//either keep bin of larger interval or left leaf 
 				bin_type kept_bin = static_cast<Leaf*>(fork_ptr->left)->bin;
 				up();
-				Fork* parent_ptr = static_cast<Fork*>(current); 
+				auto parent_ptr = static_cast<Fork*>(current); 
 				if( parent_ptr->left == fork_ptr ) {
 				
 					delete fork_ptr;
+					fork_ptr = nullptr;
 					parent_ptr->left = new Leaf(parent_ptr, kept_bin);
 					left();
 					return true;
@@ -410,6 +411,7 @@ namespace clau {
 				} else if( parent_ptr->right == fork_ptr) {
 				
 					delete fork_ptr;
+					fork_ptr = nullptr;
 					parent_ptr->right = new Leaf(parent_ptr, kept_bin);
 					right();
 					return true;
@@ -445,6 +447,69 @@ namespace clau {
 			return true;
 			
 		} else return false;
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::node_handle::is_ghost() const {
+		
+		if( is_root() ) return false;
+		auto target_ptr = current;
+		auto parent_ptr = static_cast<Fork*>(current->parent);
+		if( (parent_ptr->left == target_ptr) || (parent_ptr->right == target_ptr) ) 
+			return true;
+		else return false;
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::random_analagous(Fern<D>::node_handle one, Fern<D>::node_handle two) {
+		//returns false if ferns have different numbers of bins
+		auto original_one = one;
+		auto original_two = two;
+		while( !one.is_root() ) one.up();
+		while( !two.is_root() ) two.up();
+		if( one == two ) { //if both handles are from the same fern, just pick random node
+		
+			one.random_node;
+			two = one;
+			return true;
+			
+		} else if( one.fern->max_bin != two.fern->max_bin) return false; 
+		} else {
+			auto choice_one = one;
+			auto choice_two = two;
+			
+			std::vector<bool> branch_stack; //stack recording traversal choices: left=false, right=true
+			unsigned int n=1; //number of nodes traversed so far
+			while(true) {
+				if(one.is_leaf() || two.is_leaf()) { 
+				
+					one.up(); two.up();
+					while(branch_stack.back()) { //until we reach an unexplored right branch
+						one.up(); two.up();
+						branch_stack.pop_back();
+						if(branch_stack.size() == 0) { //no more unexplored branches
+							one = choice_one;
+							two = choice_two;
+							return true;
+						}
+					}
+				
+					one.right(); two.right();
+					branch_stack.back() = true;
+					
+				} else {
+					//test current node
+					if( (1.0/n) >= std::generate_canonical<num_type,16>(generator) ) {
+						choice_one = one;
+						choice_two = two;
+					}
+					++n;
+				
+					//next left
+					one.left(); two.left();
+					branch_stack.push_back(false);
+				}
+			}
 	}
 	
 } //namespace clau

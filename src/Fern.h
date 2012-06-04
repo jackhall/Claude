@@ -110,12 +110,12 @@ namespace clau {
 			Fork& operator=(const Fork& rhs);
 			virtual ~Fork();
 			
-			bin_type query(const array<num_type, D> point) const;
-			void update_boundary(const array<Interval, D> bounds);
+			bin_type query(const std::array<num_type, D> point) const;
+			void update_boundary(const std::array<Interval, D> bounds);
 		}; //class Fork
 
 		Fork* root;
-		array<Interval, D> root_region;
+		std::array<Interval, D> root_region;
 		bin_type max_bin;
 		rng_type generator;
 		
@@ -123,23 +123,23 @@ namespace clau {
 		
 	public:
 		Fern();
-		Fern(const array<num_type, D> lowerBound, const array<num_type, D> upperBound, 
+		Fern(const std::array<num_type, D> lowerBound, const std::array<num_type, D> upperBound, 
 		     const bin_type numBins);
 		Fern(const Fern& rhs);
 		Fern& operator=(const Fern& rhs);
 		~Fern();
 		
-		void set_bounds(const array<Interval, D> bounds);
+		void set_bounds(const std::array<Interval, D> bounds);
 		void set_num_bins(const bin_type numBins);
 		
-		array<Interval, D> get_bounds() const { return root_region; }
+		std::array<Interval, D> get_bounds() const { return root_region; }
 		Interval get_bounds(const dim_type dimension) const 
 			{ return root_region[dimension-1] };
 		bin_type get_num_bins() const { return max_bin+1; }
 		
 		void mutate();
 		void crossover(const Fern& other);
-		bin_type query(const array<num_type, D> point) { return root->query(point); }
+		bin_type query(const std::array<num_type, D> point) { return root->query(point); }
 		
 		friend std::ostream& operator<<(std::ostream& out, const Fern& fern);
 
@@ -159,6 +159,9 @@ namespace clau {
 			node_handle(const node_handle& rhs) = default;
 			node_handle& operator=(const node_handle& rhs) = default;
 			~node_handle = default;
+			
+			bool operator==(const node_handle& rhs) { return current == rhs.current; }
+			bool operator!=(const node_handle& rhs) { return current != rhs.current; }
 			
 			node_handle& up() { 
 				if(current->parent != nullptr) current = fork->parent; 
@@ -181,7 +184,10 @@ namespace clau {
 				return *this;
 			}
 			
-			void mutate();
+			node_handle& random_node();
+			
+			void mutate_value();
+			void mutate_structure();
 			void splice(const node_handle& other);
 			
 			bool split_leaf(const Division new_value);
@@ -193,10 +199,11 @@ namespace clau {
 			
 			bool is_leaf() const { return current->leaf; }
 			bool is_root() const { return current->parent == nullptr; }
+			bool is_ghost() const;
 		}; //class node_handle
 		
 		node_handle begin() { return node_handle(root); }
-		
+		bool random_analagous(node_handle one, node_handle two); //needs access to rng generator
 	}; //class Fern
 	
 } //namespace clau
