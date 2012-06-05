@@ -31,16 +31,22 @@ int main() {
 	
 	cout << "Testing default construction" << endl;
 	Fern<1> fern1;
-	//cout << fern1 << endl;
-	/*
-	cout << "Testing copy construction" << endl;
-	Fern fern3(fern1);
-	cout << fern3 << endl;
+	cout << fern1 << "===================" << endl;
 	
 	cout << "Testing normal construction" << endl;
-	Fern fern2(0.0, 1.0, 3);
-	cout << fern2 << endl;
+	Interval interval = {0.0, 1.0};
+	Region<2> region;
+	region.set_uniform(interval);
+	cout << "Initial Region:" << endl;
+		for(int i=2; i>0; i--)
+			cout << "\t[" << region(i).lower << ", " << region(i).upper << "]" << endl; 
+	Fern<2> fern2(region, 3);
+	cout << fern2 << "===================" << endl;
 	
+	cout << "Testing copy construction" << endl;
+	auto fern3(fern2);
+	cout << fern3 << "===================" << endl;
+	/*	
 	cout << "Testing splits" << endl;
 	fern2.test_splitting();
 	cout << fern2 << endl;

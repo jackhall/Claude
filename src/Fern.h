@@ -40,6 +40,42 @@ namespace clau {
 	};
 	
 	template<dim_type D>
+	struct Region {
+		std::array<Interval, D> limits;
+			
+		Region() { 
+			Interval null_interval = {0.0, 0.0};
+			for(int i=D-1; i>=0; --i) limits[i] = null_interval;
+		}
+		
+		Region(const Region& rhs) = default;
+		Region& operator=(const Region& rhs) = default;
+		~Region() = default;
+		
+		void set_uniform(const Interval interval) 
+			{ for(int i=D-1; i>=0; --i) limits[i] = interval; }
+		Interval& operator()(const unsigned int dimension) 
+			{ return limits[dimension-1]; }
+		const Interval& operator()(const unsigned int dimension) const 
+			{ return limits[dimension-1]; }
+	};
+	
+	template<dim_type D>
+	struct Point {
+		std::array<num_type, D> coordinates;
+		
+		Point() { for(int i=D-1; i>=0; --i) coordinates = 0.0; }
+		Point(const Point& rhs) = default;
+		Point& operator=(const Point& rhs) = default;
+		~Point() = default;
+		
+		num_type& operator()(const unsigned int dimension) 
+			{ return coordinates[dimension-1]; }
+		const num_type& operator()(const unsigned int dimension) const 
+			{ return coordinates[dimension-1]; }
+	};
+	
+	template<dim_type D>
 	class Fern {
 	public:
 		class node_handle; //forward declaration as a friend class for Node and Fork
@@ -54,17 +90,16 @@ namespace clau {
 		/*
 			The Node class provides a common interface for Forks and Leaves. 
 		*/
-		protected:
-			Node* parent; //this is only used by node_handles
-			bool leaf;
-			friend class node_handle;
+			Node* parent;
+			const bool leaf;
 		
-		public:
 			Node() = delete;
 			Node(Node* pParent, const bool bLeaf) : parent(pParent), leaf(bLeaf) {}
 			Node(const Node& rhs) = default;
 			Node& operator=(const Node& rhs) = default;
 			virtual ~Node() = default;
+			
+			virtual void print(std::ostream& out, unsigned int depth) const {}
 		}; //class Node
 	
 		struct Fork;
@@ -86,6 +121,7 @@ namespace clau {
 			Leaf& operator=(const Leaf& rhs) = default;
 			virtual ~Leaf() noexcept = default;
 			
+			virtual void print(std::ostream& out, unsigned int depth) const;
 			bin_type query() const { return bin; }
 		}; //class Leaf
 	
@@ -110,12 +146,13 @@ namespace clau {
 			Fork& operator=(const Fork& rhs);
 			virtual ~Fork() noexcept;
 			
-			bin_type query(const std::array<num_type, D> point) const;
-			void update_boundary(const std::array<Interval, D> bounds);
+			virtual void print(std::ostream& out, unsigned int depth) const;
+			bin_type query(const Point<D> point) const;
+			void update_boundary(const Region<D> bounds);
 		}; //class Fork
 
 		Fork* root;
-		std::array<Interval, D> root_region;
+		Region<D> root_region;
 		bin_type max_bin;
 		rng_type generator;
 		
@@ -123,22 +160,22 @@ namespace clau {
 		
 	public:
 		Fern();
-		Fern(const std::array<Interval, D> bounds, const bin_type numBins);
+		Fern(const Region<D> bounds, const bin_type numBins);
 		Fern(const Fern& rhs);
 		Fern& operator=(const Fern& rhs);
 		~Fern();
 		
-		void set_bounds(const std::array<Interval, D> bounds);
+		void set_bounds(const Region<D> bounds);
 		//left out a way to change the number of bins, might need to add it back later
 		
-		std::array<Interval, D> get_bounds() const { return root_region; }
+		Region<D> get_bounds() const { return root_region; }
 		Interval get_bounds(const dim_type dimension) const 
 			{ return root_region[dimension-1]; }
 		bin_type get_num_bins() const { return max_bin+1; }
 		
 		void mutate();
 		void crossover(const Fern& other);
-		bin_type query(const std::array<num_type, D> point) { return root->query(point); }
+		bin_type query(const Point<D> point) { return root->query(point); }
 		
 		template<dim_type T>
 		friend std::ostream& operator<<(std::ostream& out, const Fern<T>& fern);
@@ -152,7 +189,7 @@ namespace clau {
 			Fern* fern;
 			
 			node_handle(Node* root) : current(root) {}
-			friend node_handle Fern::begin();
+			friend node_handle Fern::begin() const;
 			
 		public:
 			node_handle() : current(nullptr) {}
@@ -202,7 +239,7 @@ namespace clau {
 			bool is_ghost() const;
 		}; //class node_handle
 		
-		node_handle begin() { return node_handle(root); }
+		node_handle begin() const { return node_handle(root); }
 		bool random_analagous(node_handle one, node_handle two); //needs access to rng generator
 	}; //class Fern
 	

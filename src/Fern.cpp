@@ -25,10 +25,7 @@ namespace clau {
 
 	//=================== Fern methods ======================
 	template<dim_type D>
-	Fern<D>::Fern() : max_bin(0) {
-		
-		Interval null_interval = {0.0, 0.0};
-		root_region.fill(null_interval);
+	Fern<D>::Fern() : root_region(), max_bin(0) {
 		
 		Division root_division = {false, 1};
 		root = new Fork(nullptr, root_division, 0, 0);
@@ -38,7 +35,7 @@ namespace clau {
 	}
 	
 	template<dim_type D>
-	Fern<D>::Fern(const std::array<Interval, D> bounds, const bin_type num_bins) 
+	Fern<D>::Fern(const Region<D> bounds, const bin_type num_bins) 
 		: root_region(bounds), max_bin(num_bins-1) {
 		
 		Division root_division = {false, 1};
@@ -76,7 +73,7 @@ namespace clau {
 	}
 	
 	template<dim_type D>
-	void Fern<D>::set_bounds(const std::array<Interval, D> bounds) { 
+	void Fern<D>::set_bounds(const Region<D> bounds) { 
 		root_region = bounds;
 		root->update_boundary(bounds);
 	}
@@ -100,45 +97,22 @@ namespace clau {
 		target.splice(source);
 	}
 	
-	/*
-	std::ostream& operator<<(std::ostream& out, const Fern& fern) {
+	template<dim_type T>
+	std::ostream& operator<<(std::ostream& out, const Fern<T>& fern) {
+		
+		using namespace std;
 		std::vector<bool> branch_stack;
 		auto node = fern.begin();
 		
-		out << "Interval: [" << fern.lower_bound << ", " << fern.upper_bound << "]" << std::endl; //not valid
-		out << "Number of bins: " << fern.max_bin+1 << std::endl;
-		
-		bool stop = false;
-		while(!stop) {
-			for(int i = branch_stack.size(); i>0; --i) out << "=";
-			out << *locus;
-			
-			//find new node
-			if(locus->is_leaf()) {
-				locus.up();
-			
-				while(branch_stack.back()) { //until we reach an unexplored right branch
-					locus.up();
-					branch_stack.pop_back();
-					if(branch_stack.size() == 0) { //no more unexplored branches
-						stop = true;
-						break;
-					}
-				}
-				
-				if(!stop) { 
-					locus.right();
-					branch_stack.back() = true;
-				}
-			} else {
-				locus.left();
-				branch_stack.push_back(false);
-			}
-		}
+		out << "Interval:" << endl;
+		for(int i=T; i>0; i--)
+			out << "\t[" << fern.root_region(i).lower << ", " << fern.root_region(i).upper << "]" << endl; 
+		out << "Number of bins: " << fern.max_bin+1 << endl;
+		out << "Fern structure:" << endl;
+		fern.root->print(out, 0);
 		
 		return out;
 	}
-	*/
 	
 	//==================== Fern::Fork methods ===================
 	template<dim_type D>
@@ -154,13 +128,13 @@ namespace clau {
 	Fern<D>::Fork::Fork(const Fork& rhs) 
 		: Node(rhs.parent, false), value(rhs.value), boundary(rhs.boundary) {
 		//copy left subtree
-		if( rhs.left->is_leaf() ) left = new Leaf( *static_cast<Leaf*>(rhs.left) );
-		else 			  left = new Fork( *static_cast<Fork*>(rhs.left) );
+		if( rhs.left->leaf ) left = new Leaf( *static_cast<Leaf*>(rhs.left) );
+		else 		     left = new Fork( *static_cast<Fork*>(rhs.left) );
 		left->parent = this;
 		
 		//copy right subtree
-		if( rhs.right->is_leaf() ) right = new Leaf( *static_cast<Leaf*>(rhs.right) );
-		else 			   right = new Fork( *static_cast<Fork*>(rhs.right) );
+		if( rhs.right->leaf ) right = new Leaf( *static_cast<Leaf*>(rhs.right) );
+		else 		      right = new Fork( *static_cast<Fork*>(rhs.right) );
 		right->parent = this;
 	}
 	
@@ -176,16 +150,16 @@ namespace clau {
 			delete left;
 			left = nullptr;
 	
-			if( rhs.left->is_leaf() ) left = new Leaf( *static_cast<Leaf*>(rhs.left) );
-			else 			  left = new Fork( *static_cast<Fork*>(rhs.left) );
+			if( rhs.left->leaf ) left = new Leaf( *static_cast<Leaf*>(rhs.left) );
+			else 		     left = new Fork( *static_cast<Fork*>(rhs.left) );
 			left->parent = this;
 		
 			//replace right subtree
 			delete right;
 			right = nullptr;
 		
-			if( rhs.right->is_leaf() ) right = new Leaf( *static_cast<Leaf*>(rhs.right) );
-			else 			   right = new Fork( *static_cast<Fork*>(rhs.right) );
+			if( rhs.right->leaf ) right = new Leaf( *static_cast<Leaf*>(rhs.right) );
+			else 		      right = new Fork( *static_cast<Fork*>(rhs.right) );
 			right->parent = this;
 		}
 		return *this;
@@ -201,8 +175,17 @@ namespace clau {
 	}
 	
 	template<dim_type D>
-	bin_type Fern<D>::Fork::query(const std::array<num_type, D> point) const {
-		if(point[value.dimension-1] < boundary) {
+	void Fern<D>::Fork::print(std::ostream& out, unsigned int depth) const {
+		using namespace std;
+		for(int i=depth; i>0; --i) out << "    ";
+		out << "{" << value.bit << ", D" << value.dimension << "}" << endl;
+		left->print(out, depth+1);
+		right->print(out, depth+1);
+	}
+	
+	template<dim_type D>
+	bin_type Fern<D>::Fork::query(const Point<D> point) const {
+		if(point(value.dimension) < boundary) {
 			if(left->leaf) return static_cast<Leaf*>(left)->query();
 			else return static_cast<Fork*>(left)->query(point);
 		} else {
@@ -212,24 +195,32 @@ namespace clau {
 	}
 	
 	template<dim_type D>
-	void Fern<D>::Fork::update_boundary(const std::array<Interval, D> bounds) {
+	void Fern<D>::Fork::update_boundary(const Region<D> bounds) {
 		num_type ratio = 2.0/(1.0 + sqrt(5));
-		Interval interval = bounds[value.dimension-1];
+		Interval interval = bounds(value.dimension);
 		
 		if(value.bit) boundary = interval.lower + ratio*(interval.upper - interval.lower);
 		else boundary = interval.lower + (1-ratio)*(interval.upper - interval.lower);
 		
-		if(!left->leaf) {
-			std::array<Interval, D> left_bounds = bounds;
-			left_bounds[value.dimension-1].upper = boundary;
+		if(!left->leaf) { 
+			Region<D> left_bounds = bounds;
+			left_bounds(value.dimension).upper = boundary;
 			static_cast<Fork*>(left)->update_boundary(left_bounds);
 		}
 		
 		if(!right->leaf) {
-			std::array<Interval, D> right_bounds = bounds;
-			right_bounds[value.dimension-1].lower = boundary;
+			Region<D> right_bounds = bounds;
+			right_bounds(value.dimension).lower = boundary;
 			static_cast<Fork*>(right)->update_boundary(right_bounds);
 		}
+	}
+
+	//==================== Fern::Leaf methods
+	template<dim_type D>
+	void Fern<D>::Leaf::print(std::ostream& out, unsigned int depth) const {
+		using namespace std;
+		for(int i=depth; i>0; --i) out << "    ";
+		out << "{B" << bin << "}" << endl;
 	}
 
 	//==================== Fern::node_handle methods ============
