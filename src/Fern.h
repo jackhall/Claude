@@ -67,7 +67,7 @@ namespace clau {
 			virtual ~Node() = default;
 		}; //class Node
 	
-		struct Fork : public Node;
+		struct Fork;
 
 		struct Leaf : public Node {
 		/*
@@ -84,7 +84,7 @@ namespace clau {
 				: Node(pParent, true), bin(nBin) {}
 			Leaf(const Leaf& rhs) = default;
 			Leaf& operator=(const Leaf& rhs) = default;
-			virtual ~Leaf() = default;
+			virtual ~Leaf() noexcept = default;
 			
 			bin_type query() const { return bin; }
 		}; //class Leaf
@@ -108,7 +108,7 @@ namespace clau {
 			     const bin_type left_bin, const bin_type right_bin);
 			Fork(const Fork& rhs);
 			Fork& operator=(const Fork& rhs);
-			virtual ~Fork();
+			virtual ~Fork() noexcept;
 			
 			bin_type query(const std::array<num_type, D> point) const;
 			void update_boundary(const std::array<Interval, D> bounds);
@@ -133,14 +133,15 @@ namespace clau {
 		
 		std::array<Interval, D> get_bounds() const { return root_region; }
 		Interval get_bounds(const dim_type dimension) const 
-			{ return root_region[dimension-1] };
+			{ return root_region[dimension-1]; }
 		bin_type get_num_bins() const { return max_bin+1; }
 		
 		void mutate();
 		void crossover(const Fern& other);
 		bin_type query(const std::array<num_type, D> point) { return root->query(point); }
 		
-		friend std::ostream& operator<<(std::ostream& out, const Fern& fern);
+		template<dim_type T>
+		friend std::ostream& operator<<(std::ostream& out, const Fern<T>& fern);
 
 		class node_handle {
 		/*
@@ -157,13 +158,13 @@ namespace clau {
 			node_handle() : current(nullptr) {}
 			node_handle(const node_handle& rhs) = default;
 			node_handle& operator=(const node_handle& rhs) = default;
-			~node_handle = default;
+			~node_handle() = default;
 			
 			bool operator==(const node_handle& rhs) { return current == rhs.current; }
 			bool operator!=(const node_handle& rhs) { return current != rhs.current; }
 			
 			node_handle& up() { 
-				if(current->parent != nullptr) current = fork->parent; 
+				if(current->parent != nullptr) current = current->parent; 
 				return *this;
 			}
 			

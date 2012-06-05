@@ -19,20 +19,20 @@
 */
 
 //to test Claude, run the following from the test directory:
-//	g++ -std=c++0x -g -I../src -lClaude test_claude.cpp -o test_claude
+//	g++ -std=c++11 -g -I../src test_claude.cpp -o test_claude
 //	./test_claude
 
 #include <iostream>
-#include "Claude.h"
+#include "Fern.h"
 
 int main() {
 	using namespace std;
 	using namespace clau;
 	
 	cout << "Testing default construction" << endl;
-	Fern fern1;
-	cout << fern1 << endl;
-	
+	Fern<1> fern1;
+	//cout << fern1 << endl;
+	/*
 	cout << "Testing copy construction" << endl;
 	Fern fern3(fern1);
 	cout << fern3 << endl;
@@ -48,31 +48,13 @@ int main() {
 	cout << "Testing copies" << endl;
 	fern1.set_bounds(0.0, 1.0); 
 	fern1.set_bins(3);
-	fern1.test_copying(fern2); //fixed with major-league kludge
+	fern1.test_copying(fern2); 
 	cout << fern1 << endl;
 	
 	cout << "Testing merges" << endl;
 	fern2.test_merging();
 	cout << fern2 << endl;
-	
-	cout << "Testing mutation" << endl;
-	fern3.set_bounds(0.0, 1.0); 
-	fern3.set_bins(3);
-	fern3.mutate();
-	cout << fern3 << endl;
-	fern3.mutate();
-	cout << fern3 << endl;
-	
-	cout << "Testing crossover" << endl;
-	fern2.test_splitting();
-	cout << fern2 << endl;
-	fern2.mutate();
-	fern2.mutate();
-	cout << fern2 << endl;
-	cout << fern1 << endl;
-	fern1.crossover(fern2);
-	cout << fern1 << endl;
-	
+	*/
 	return 0;
 }
 

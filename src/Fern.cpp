@@ -25,11 +25,13 @@ namespace clau {
 
 	//=================== Fern methods ======================
 	template<dim_type D>
-	Fern<D>::Fern() 
-		: root( new Fork(nullptr, {false 1}, 0, 0) ), max_bin(0) {
+	Fern<D>::Fern() : max_bin(0) {
 		
 		Interval null_interval = {0.0, 0.0};
 		root_region.fill(null_interval);
+		
+		Division root_division = {false, 1};
+		root = new Fork(nullptr, root_division, 0, 0);
 		
 		std::random_device device;
 		generator.seed( device() );
@@ -37,10 +39,12 @@ namespace clau {
 	
 	template<dim_type D>
 	Fern<D>::Fern(const std::array<Interval, D> bounds, const bin_type num_bins) 
-		: root( new Fork(nullptr, {false 1}, 0, 0) ), root_region(bounds),
-		  max_bin(num_bins-1) {
+		: root_region(bounds), max_bin(num_bins-1) {
 		
-		root->update_boundary(lower_bound, upper_bound);
+		Division root_division = {false, 1};
+		root = new Fork(nullptr, root_division, 0, 0);
+		
+		root->update_boundary(root_region);
 		
 		std::random_device device;
 		generator.seed( device() );
@@ -147,8 +151,8 @@ namespace clau {
 	}
 	
 	template<dim_type D>
-	Fern<D>::Fork::Fork(const Fork& rhs, Fork* pParent=nullptr) 
-		: Node(pParent, false), value(rhs.value), boundary(rhs.boundary) {
+	Fern<D>::Fork::Fork(const Fork& rhs) 
+		: Node(rhs.parent, false), value(rhs.value), boundary(rhs.boundary) {
 		//copy left subtree
 		if( rhs.left->is_leaf() ) left = new Leaf( *static_cast<Leaf*>(rhs.left) );
 		else 			  left = new Fork( *static_cast<Fork*>(rhs.left) );
@@ -161,7 +165,7 @@ namespace clau {
 	}
 	
 	template<dim_type D>
-	Fern<D>::Fork&  Fern<D>::Fork::operator=(const Fork& rhs) {
+	typename Fern<D>::Fork&  Fern<D>::Fork::operator=(const Fork& rhs) {
 	
 		if( this != &rhs ) {
 			//keeps its place in its original tree (does not copy parent pointer)
@@ -188,7 +192,7 @@ namespace clau {
 	}
 	
 	template<dim_type D>
-	Fern<D>::Fork::~Fork() {
+	Fern<D>::Fork::~Fork() noexcept {
 		delete left;
 		left = nullptr;
 
@@ -230,7 +234,7 @@ namespace clau {
 
 	//==================== Fern::node_handle methods ============
 	template<dim_type D>
-	Fern<D>::node_handle&  Fern<D>::node_handle::random_node() {
+	typename Fern<D>::node_handle&  Fern<D>::node_handle::random_node() {
 		auto start = current; //save current position
 		while( !is_root() ) up(); //go to root
 		auto choice = current; 
@@ -270,14 +274,14 @@ namespace clau {
 	void Fern<D>::node_handle::mutate_value() {
 		if( is_leaf() ) {
 			
-			std::uniform_int_distribution random_int(0, fern->max_bin);
+			std::uniform_int_distribution<bin_type> random_int(0, fern->max_bin);
 			set_leaf_bin( random_int(fern->generator) );
 			
 		} else {
 			
 			std::bernoulli_distribution random_bit(0.5);
 			if( random_bit(fern->generator) ) {
-				std::uniform_int_distribution random_int(1, D);
+				std::uniform_int_distribution<dim_type> random_int(1, D);
 				set_fork_dimension( random_int(fern->generator) );
 			} else set_fork_bit( random_bit(fern->generator) );
 		}
@@ -289,7 +293,7 @@ namespace clau {
 		if( is_leaf() ) {
 		
 			std::bernoulli_distribution random_bit(0.5);
-			std::uniform_int_distribution random_int(1, D);
+			std::uniform_int_distribution<dim_type> random_int(1, D);
 			Division new_division = { random_bit(fern->generator), 
 						  random_int(fern->generator) };
 			return split_leaf(new_division); //performs ghost check
@@ -461,7 +465,7 @@ namespace clau {
 			return true;
 			
 		} else if( one.fern->max_bin != two.fern->max_bin) return false; 
-		} else {
+		  else {
 			auto choice_one = one;
 			auto choice_two = two;
 			
