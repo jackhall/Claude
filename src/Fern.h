@@ -123,14 +123,13 @@ namespace clau {
 		
 	public:
 		Fern();
-		Fern(const std::array<num_type, D> lowerBound, const std::array<num_type, D> upperBound, 
-		     const bin_type numBins);
+		Fern(const std::array<Interval, D> bounds, const bin_type numBins);
 		Fern(const Fern& rhs);
 		Fern& operator=(const Fern& rhs);
 		~Fern();
 		
 		void set_bounds(const std::array<Interval, D> bounds);
-		void set_num_bins(const bin_type numBins);
+		//left out a way to change the number of bins, might need to add it back later
 		
 		std::array<Interval, D> get_bounds() const { return root_region; }
 		Interval get_bounds(const dim_type dimension) const 

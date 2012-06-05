@@ -24,50 +24,61 @@
 namespace clau {
 
 	//=================== Fern methods ======================
-	Fern::Fern() //take another look
-		: root( new Fork(NULL, false) ), upper_bound(0.0),
-		  lower_bound(0.0), max_bin(0) {}
-	
-	Fern::Fern(const num_type lowerBound, const num_type upperBound, 
-		   const bin_type numBins) //take another look
-		: root( new Fork(NULL, false) ), upper_bound(upperBound),
-		  lower_bound(lowerBound), max_bin(numBins-1) {
+	template<dim_type D>
+	Fern<D>::Fern() 
+		: root( new Fork(nullptr, {false 1}, 0, 0) ), max_bin(0) {
 		
-		root->update_boundary(lower_bound, upper_bound);
-		root->update_max_bin(max_bin);
+		Interval null_interval = {0.0, 0.0};
+		root_region.fill(null_interval);
+		
+		std::random_device device;
+		generator.seed( device() );
 	}
 	
-	Fern::Fern(const Fern& rhs) //take another look
-		: root( new Fork(*rhs.root) ), upper_bound(rhs.upper_bound), 
-		  lower_bound(rhs.lower_bound), max_bin(rhs.max_bin) {}
+	template<dim_type D>
+	Fern<D>::Fern(const std::array<Interval, D> bounds, const bin_type num_bins) 
+		: root( new Fork(nullptr, {false 1}, 0, 0) ), root_region(bounds),
+		  max_bin(num_bins-1) {
+		
+		root->update_boundary(lower_bound, upper_bound);
+		
+		std::random_device device;
+		generator.seed( device() );
+	}
 	
-	Fern& Fern::operator=(const Fern& rhs) { //take another look
+	template<dim_type D>
+	Fern<D>::Fern(const Fern<D>& rhs) 
+		: root( new Fork(*rhs.root) ), root_region(rhs.root_region), 
+		  max_bin(rhs.max_bin) {
+		  
+		std::random_device device;
+		generator.seed( device() );
+	}
+	
+	template<dim_type D>
+	Fern<D>& Fern<D>::operator=(const Fern<D>& rhs) { 
 		if(this != &rhs) {
+			root_region = rhs.root_region;
+			max_bin = rhs.max_bin;
 			delete root;
 			root = new Fork(*rhs.root);
-			upper_bound = rhs.upper_bound;
-			lower_bound = rhs.lower_bound;
-			max_bin = rhs.max_bin;
 		}
 		return *this;
 	}
 	
-	Fern::~Fern() {
+	template<dim_type D>
+	Fern<D>::~Fern() {
 		delete root;
 	}
 	
-	void Fern::set_bounds(const num_type lowerBound, const num_type upperBound) { //update to use Interval
-		lower_bound = lowerBound;
-		upper_bound = upperBound;
-		root->update_boundary(lower_bound, upper_bound);
+	template<dim_type D>
+	void Fern<D>::set_bounds(const std::array<Interval, D> bounds) { 
+		root_region = bounds;
+		root->update_boundary(bounds);
 	}
 	
-	void Fern::set_num_bins(const bin_type numBins) { //rewrite using node_handles
-		max_bin = numBins-1;
-		root->update_max_bin(max_bin); //no longer a method of Node
-	}
-	
-	void Fern::mutate() { 
+	template<dim_type D>
+	void Fern<D>::mutate() { 
 		auto locus = begin();
 		locus.random_node();
 		std::bernoulli_distribution  mutation_type_chance(0.5);
@@ -77,7 +88,8 @@ namespace clau {
 		else locus.mutate_value();
 	}
 	
-	void Fern::crossover(const Fern& other) { 
+	template<dim_type D>
+	void Fern<D>::crossover(const Fern& other) { 
 		auto target = begin();
 		auto source = other.begin();
 		random_analagous(target, source);
@@ -122,39 +134,6 @@ namespace clau {
 		
 		return out;
 	}
-	*/
-	/*
-	bool Fern::test_splitting() {
-		Node::iterator locus(root);
-		Node::iterator root_locus(locus);
-		locus.left();
-		locus->split(true);
-		
-		locus = root_locus;
-		locus.left().right();
-		locus->split(false);
-		
-		root_locus->update_boundary(lower_bound, upper_bound);
-		root_locus->update_max_bin(max_bin);
-		return true;
-	}
-	
-	bool Fern::test_copying(const Fern& source) {
-		Node::iterator locus1(root), locus2(source.root);
-		locus1.left();
-		locus2.left();
-		locus1->copy(*locus2);	
-		return true;
-	}
-	
-	bool Fern::test_merging() {
-		Node::iterator locus(root);
-		locus.left();
-		locus->merge();
-		
-		root->update_max_bin(max_bin);
-		return true;
-	} 
 	*/
 	
 	//==================== Fern::Fork methods ===================
