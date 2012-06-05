@@ -187,8 +187,8 @@ namespace clau {
 			node_handle& random_node();
 			
 			void mutate_value();
-			void mutate_structure();
-			void splice(const node_handle& other);
+			bool mutate_structure();
+			bool splice(const node_handle& other);
 			
 			bool split_leaf(const Division new_value);
 			bool set_leaf_bin(const bin_type new_bin);

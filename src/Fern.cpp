@@ -67,21 +67,29 @@ namespace clau {
 		root->update_max_bin(max_bin); //no longer a method of Node
 	}
 	
-	void Fern::mutate() { //rewrite using node_handles
-		//get random_node
-		//mutate
+	void Fern::mutate() { 
+		auto locus = begin();
+		locus.random_node();
+		std::bernoulli_distribution  mutation_type_chance(0.5);
+
+		if( mutation_type_chance(generator) ) 
+			if( !locus.mutate_structure() ) locus.mutate_value();
+		else locus.mutate_value();
 	}
 	
-	void Fern::crossover(const Fern& other) { //rewrite using node_handles
-		//get random_analagous
-		//splice
+	void Fern::crossover(const Fern& other) { 
+		auto target = begin();
+		auto source = other.begin();
+		random_analagous(target, source);
+		target.splice(source);
 	}
 	
+	/*
 	std::ostream& operator<<(std::ostream& out, const Fern& fern) {
 		std::vector<bool> branch_stack;
-		Node::iterator locus(fern.root);
+		auto node = fern.begin();
 		
-		out << "Interval: [" << fern.lower_bound << ", " << fern.upper_bound << "]" << std::endl;
+		out << "Interval: [" << fern.lower_bound << ", " << fern.upper_bound << "]" << std::endl; //not valid
 		out << "Number of bins: " << fern.max_bin+1 << std::endl;
 		
 		bool stop = false;
@@ -114,7 +122,7 @@ namespace clau {
 		
 		return out;
 	}
-	
+	*/
 	/*
 	bool Fern::test_splitting() {
 		Node::iterator locus(root);
@@ -510,6 +518,7 @@ namespace clau {
 					branch_stack.push_back(false);
 				}
 			}
+		}
 	}
 	
 } //namespace clau
