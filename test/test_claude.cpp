@@ -19,48 +19,43 @@
 */
 
 //to test Claude, run the following from the test directory:
-//	g++ -std=c++11 -g -I../src test_claude.cpp -o test_claude
+//	g++ -std=c++11 -g -I../src -lgtest test_claude.cpp -o test_claude
 //	./test_claude
 
 #include <iostream>
 #include "Fern.h"
+#include "gtest/gtest.h"
 
-int main() {
-	using namespace std;
-	using namespace clau;
-	
-	cout << "Testing default construction" << endl;
-	Fern<1> fern1;
-	cout << fern1 << "===================" << endl;
-	
-	cout << "Testing normal construction" << endl;
-	Interval interval = {0.0, 1.0};
-	Region<2> region;
-	region.set_uniform(interval);
-	cout << "Initial Region:" << endl;
-		for(int i=2; i>0; i--)
-			cout << "\t[" << region(i).lower << ", " << region(i).upper << "]" << endl; 
-	Fern<2> fern2(region, 3);
-	cout << fern2 << "===================" << endl;
-	
-	cout << "Testing copy construction" << endl;
-	auto fern3(fern2);
-	cout << fern3 << "===================" << endl;
-	/*	
-	cout << "Testing splits" << endl;
-	fern2.test_splitting();
-	cout << fern2 << endl;
-	
-	cout << "Testing copies" << endl;
-	fern1.set_bounds(0.0, 1.0); 
-	fern1.set_bins(3);
-	fern1.test_copying(fern2); 
-	cout << fern1 << endl;
-	
-	cout << "Testing merges" << endl;
-	fern2.test_merging();
-	cout << fern2 << endl;
-	*/
-	return 0;
+namespace {
+
+	class FernTest : public ::testing::Test {
+	protected:
+		FernTest() {
+	    	// You can do set-up work for each test here.
+	  	}
+
+	  	virtual ~FernTest() {
+	    	// You can do clean-up work that doesn't throw exceptions here.
+	  	}
+	};
+
+	// Tests that the Foo::Bar() method does Abc.
+	TEST_F(FernTest, MethodBarDoesAbc) {
+	  const string input_filepath = "this/package/testdata/myinputfile.dat";
+	  const string output_filepath = "this/package/testdata/myoutputfile.dat";
+	  Fern f;
+	  EXPECT_EQ(0, f.Bar(input_filepath, output_filepath));
+	}
+
+	// Tests that Foo does Xyz.
+	TEST_F(FernTest, DoesXyz) {
+	  // Exercises the Xyz feature of Foo.
+	}
+
+}  // namespace
+
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
 }
 
