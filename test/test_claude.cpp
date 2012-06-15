@@ -19,7 +19,7 @@
 */
 
 //to test Claude, run the following from the test directory:
-//	g++ -std=c++11 -g -I../src -lgtest test_claude.cpp -o test_claude
+//	g++ -std=c++11 -g -I../src -lgtest -lpthread test_claude.cpp -o test_claude
 //	./test_claude
 
 #include <iostream>
@@ -28,6 +28,31 @@
 
 namespace {
 
+	TEST(ConstructionTests, DefaultConstruction) {
+		using namespace clau;
+		Fern<1> fern;
+		
+		EXPECT_EQ(1, fern.get_num_bins());
+		
+		Region<1> region;
+		region.set_uniform(Interval());
+		EXPECT_EQ(region, fern.get_bounds());
+		
+		auto node = fern.begin();
+		EXPECT_TRUE(node.is_root());
+		EXPECT_EQ(1, node.get_fork_dimension());
+		EXPECT_FALSE(node.get_fork_bit());
+		
+		node.left();
+		EXPECT_TRUE(node.is_leaf());
+		EXPECT_EQ(0, node.get_leaf_bin());
+		
+		node.up().right();
+		EXPECT_TRUE(node.is_leaf());
+		EXPECT_EQ(0, node.get_leaf_bin());
+	}
+	
+	/*
 	class FernTest : public ::testing::Test {
 	protected:
 		FernTest() {
@@ -38,20 +63,19 @@ namespace {
 	    	// You can do clean-up work that doesn't throw exceptions here.
 	  	}
 	};
-
+	
 	// Tests that the Foo::Bar() method does Abc.
 	TEST_F(FernTest, MethodBarDoesAbc) {
-	  const string input_filepath = "this/package/testdata/myinputfile.dat";
-	  const string output_filepath = "this/package/testdata/myoutputfile.dat";
-	  Fern f;
-	  EXPECT_EQ(0, f.Bar(input_filepath, output_filepath));
+
+		Fern f;
+		EXPECT_EQ(0, f.Bar(input_filepath, output_filepath));
 	}
 
 	// Tests that Foo does Xyz.
 	TEST_F(FernTest, DoesXyz) {
 	  // Exercises the Xyz feature of Foo.
 	}
-
+	*/
 }  // namespace
 
 int main(int argc, char **argv) {

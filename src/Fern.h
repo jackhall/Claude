@@ -37,20 +37,40 @@ namespace clau {
 	struct Interval { 
 		num_type lower;
 		num_type upper;
+		
+		Interval() : lower(0.0), upper(0.0) {}
+		bool operator==(const Interval& rhs) const
+			{ return (lower==rhs.lower) && (upper==rhs.upper); }
+		bool operator!=(const Interval& rhs) const { return !(*this==rhs); }
+		
+		friend std::ostream& operator<<(std::ostream& out, const Interval& interval);
 	};
+	
+	std::ostream& operator<<(std::ostream& out, const Interval& interval) {
+		out << "[ " << interval.lower << " , " << interval.upper << " ]";
+		return out;
+	}
 	
 	template<dim_type D>
 	struct Region {
 		std::array<Interval, D> limits;
 			
 		Region() { 
-			Interval null_interval = {0.0, 0.0};
+			Interval null_interval;
 			for(int i=D-1; i>=0; --i) limits[i] = null_interval;
 		}
 		
 		Region(const Region& rhs) = default;
 		Region& operator=(const Region& rhs) = default;
 		~Region() = default;
+		
+		bool operator==(const Region& rhs) const { 
+			for(int i=D-1; i>=0; --i) if(limits[i] != rhs.limits[i]) return false;
+			return true;
+		}
+		bool operator!=(const Region& rhs) const { return !(*this==rhs); }
+		template<dim_type T> 
+		friend std::ostream& operator<<(std::ostream& out, const Region<T>& region);
 		
 		void set_uniform(const Interval interval) 
 			{ for(int i=D-1; i>=0; --i) limits[i] = interval; }
@@ -59,6 +79,12 @@ namespace clau {
 		const Interval& operator()(const unsigned int dimension) const 
 			{ return limits[dimension-1]; }
 	};
+	
+	template<dim_type T>
+	std::ostream& operator<<(std::ostream& out, const Region<T>& region) {
+		for(int i=0; i<T; ++i) out << "[" << region.limits[i] << "]";
+		return out;
+	}
 	
 	template<dim_type D>
 	struct Point {
@@ -170,7 +196,8 @@ namespace clau {
 		
 		Region<D> get_bounds() const { return root_region; }
 		Interval get_bounds(const dim_type dimension) const 
-			{ return root_region[dimension-1]; }
+			{ if(dimension <= D && dimension > 0) return root_region[dimension-1];
+			  else return Interval(); }
 		bin_type get_num_bins() const { return max_bin+1; }
 		
 		void mutate();
@@ -228,9 +255,12 @@ namespace clau {
 			bool splice(const node_handle& other);
 			
 			bool split_leaf(const Division new_value);
+			bin_type get_leaf_bin() const;
 			bool set_leaf_bin(const bin_type new_bin);
 			
 			bool merge_fork();
+			dim_type get_fork_dimension() const;
+			bool get_fork_bit() const;
 			bool set_fork_dimension(const dim_type new_dimension);
 			bool set_fork_bit(const bool new_bit);
 			

@@ -360,6 +360,12 @@ namespace clau {
 	}
 	
 	template<dim_type D>
+	bin_type Fern<D>::node_handle::get_leaf_bin() const {
+		if( !is_leaf() ) return 0;
+		else return static_cast<Leaf*>(current)->bin;
+	}
+	
+	template<dim_type D>
 	bool Fern<D>::node_handle::set_leaf_bin(const bin_type new_bin) {
 		//returns false for forks or if new_bin is out-of-range
 		if( current->leaf && (new_bin <= fern->max_bin) ) {
@@ -405,6 +411,18 @@ namespace clau {
 				
 			} else return false; //both children are not leaves
 		} else return false; //current points to a leaf or root
+	}
+	
+	template<dim_type D>
+	dim_type Fern<D>::node_handle::get_fork_dimension() const {
+		if( is_leaf() ) return 0;
+		else return static_cast<Fork*>(current)->value.dimension;
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::node_handle::get_fork_bit() const {
+		if( is_leaf() ) return false;
+		else return static_cast<Fork*>(current)->value.bit;
 	}
 	
 	template<dim_type D>
