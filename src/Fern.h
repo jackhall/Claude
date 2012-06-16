@@ -39,6 +39,8 @@ namespace clau {
 		num_type upper;
 		
 		Interval() : lower(0.0), upper(0.0) {}
+		Interval(const num_type fLower, const num_type fUpper) 
+			: lower(fLower), upper(fUpper) {}
 		bool operator==(const Interval& rhs) const
 			{ return (lower==rhs.lower) && (upper==rhs.upper); }
 		bool operator!=(const Interval& rhs) const { return !(*this==rhs); }
@@ -106,12 +108,15 @@ namespace clau {
 	public:
 		class node_handle; //forward declaration as a friend class for Node and Fork
 		
-	private:
 		struct Division {
 			bool bit;
 			dim_type dimension;
+			
+			Division(const bool bBit, const dim_type dim=1) : bit(bBit), dimension(dim) 
+				{ if(dim <= 0 || dim > D) dimension = 1; }
 		};
-	
+		
+	private:
 		struct Node {
 		/*
 			The Node class provides a common interface for Forks and Leaves. 
@@ -185,8 +190,8 @@ namespace clau {
 		friend node_handle;
 		
 	public:
-		Fern();
-		Fern(const Region<D> bounds, const bin_type numBins);
+		Fern(const bin_type numBins=1.0);
+		Fern(const Region<D> bounds, const bin_type numBins=1.0);
 		Fern(const Fern& rhs);
 		Fern& operator=(const Fern& rhs);
 		~Fern();
@@ -249,6 +254,7 @@ namespace clau {
 			}
 			
 			node_handle& random_node();
+			node_handle& root() { while( !is_root() ) up(); return *this; }
 			
 			void mutate_value();
 			bool mutate_structure();
@@ -267,6 +273,7 @@ namespace clau {
 			bool is_leaf() const { return current->leaf; }
 			bool is_root() const { return current->parent == nullptr; }
 			bool is_ghost() const;
+			bool belongs_to(const Fern& owner) { return fern==&owner; }
 		}; //class node_handle
 		
 		node_handle begin() const { return node_handle(root); }

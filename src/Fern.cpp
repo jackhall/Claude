@@ -25,7 +25,7 @@ namespace clau {
 
 	//=================== Fern methods ======================
 	template<dim_type D>
-	Fern<D>::Fern() : root_region(), max_bin(0) {
+	Fern<D>::Fern(const bin_type numBins) : root_region(), max_bin(numBins-1) {
 		
 		Division root_division = {false, 1};
 		root = new Fork(nullptr, root_division, 0, 0);
@@ -35,8 +35,8 @@ namespace clau {
 	}
 	
 	template<dim_type D>
-	Fern<D>::Fern(const Region<D> bounds, const bin_type num_bins) 
-		: root_region(bounds), max_bin(num_bins-1) {
+	Fern<D>::Fern(const Region<D> bounds, const bin_type numBins) 
+		: root_region(bounds), max_bin(numBins-1) {
 		
 		Division root_division = {false, 1};
 		root = new Fork(nullptr, root_division, 0, 0);
@@ -431,7 +431,7 @@ namespace clau {
 		if( !current->leaf && (new_dimension <= D) && (new_dimension > 0) ) {
 		
 			static_cast<Fork*>(current)->value.dimension = new_dimension;
-			fern->root->update_boundary(root_region);
+			fern->root->update_boundary(fern->root_region); //segfaults
 			return true;
 			
 		} else return false;
@@ -443,7 +443,7 @@ namespace clau {
 		if( !current->leaf ) {
 		
 			static_cast<Fork*>(current)->value.bit = new_bit;
-			fern->root->update_boundary(root_region);
+			fern->root->update_boundary(fern->root_region); //segfaults
 			return true;
 			
 		} else return false;
@@ -456,8 +456,8 @@ namespace clau {
 		auto target_ptr = current;
 		auto parent_ptr = static_cast<Fork*>(current->parent);
 		if( (parent_ptr->left == target_ptr) || (parent_ptr->right == target_ptr) ) 
-			return true;
-		else return false;
+			return false;
+		else return true;
 	}
 	
 	template<dim_type D>
