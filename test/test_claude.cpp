@@ -52,6 +52,20 @@ namespace {
 		EXPECT_EQ(0, node.get_leaf_bin());
 	}
 	
+	TEST(ConstructionTests, NormalConstruction) {
+		using namespace clau;
+		
+		Interval span1 = {0.0, 1.0};
+		Interval span2 = {2.0, 4.0};
+		Region<2> region;
+		region(1) = span1;
+		region(2) = span2;
+		short num_bins = 3;
+		Fern<2> fern(region, num_bins);
+		
+		EXPECT_EQ(region, fern.get_bounds());
+		EXPECT_EQ(num_bins, fern.get_num_bins());
+	}
 	/*
 	class FernTest : public ::testing::Test {
 	protected:
@@ -63,7 +77,7 @@ namespace {
 	    	// You can do clean-up work that doesn't throw exceptions here.
 	  	}
 	};
-	
+	/*
 	// Tests that the Foo::Bar() method does Abc.
 	TEST_F(FernTest, MethodBarDoesAbc) {
 
