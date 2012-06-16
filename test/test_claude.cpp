@@ -118,6 +118,7 @@ namespace {
 			node.right();
 			division.bit = false;
 			node.split_leaf(division);
+			node.right().set_leaf_bin(0);
 		
 			node.root().right();
 			EXPECT_TRUE(node.set_leaf_bin(2));
@@ -183,6 +184,7 @@ namespace {
 		EXPECT_TRUE(node.split_leaf(division));
 		EXPECT_FALSE(node.get_fork_bit());
 		EXPECT_EQ(2, node.get_fork_dimension());
+		EXPECT_TRUE(node.right().set_leaf_bin(0));
 		
 		//split root.right, verify new fork properties
 		node.root();
@@ -208,24 +210,83 @@ namespace {
 	TEST_F(NodeManipulationTest, Pruning) {
 		using namespace clau;
 		ExpandFern();
+		
+		//merge 2nd and 3rd leaves, preserving 3rd leaf's bin
+		node.left().right();
+		node.merge_fork();
+		EXPECT_FALSE(node.is_ghost());
+		EXPECT_FALSE(node.is_root());
+		EXPECT_TRUE(node.is_leaf());
+		EXPECT_EQ(0, node.get_leaf_bin());
+		
+		//merge 1st and 2nd leaves, preserving 1st leaf's bin
+		node.up().merge_fork();
+		EXPECT_EQ(1, node.get_leaf_bin());
 	}
-	/*
-	class FernTest : public ::testing::Test {
+	
+	TEST_F(NodeManipulationTest, Splicing) {
+		using namespace clau;
+		ExpandFern();
+		
+		//construct origin fern, differing only by root.left.value.bit
+		Fern<2> origin_fern(region, num_bins);
+		auto node2 = origin_fern.begin();
+		node2.left();
+		EXPECT_TRUE(node2.set_leaf_bin(1));
+		Fern<2>::Division division(false, 2);
+		EXPECT_TRUE(node2.split_leaf(division));
+		EXPECT_TRUE(node2.right().split_leaf(division));
+		EXPECT_TRUE(node2.right().set_leaf_bin(0));
+		EXPECT_TRUE(node2.root().right().set_leaf_bin(2));
+		division.bit = true;
+		division.dimension = 1;
+		EXPECT_TRUE(node2.split_leaf(division));
+		node2.root().left();
+		
+		//splice at root.left and check results
+		node.left();
+		EXPECT_TRUE(node.splice(node2));
+		EXPECT_FALSE(node.is_ghost());
+		EXPECT_FALSE(node2.is_ghost());
+		EXPECT_FALSE(node.is_root());
+		EXPECT_FALSE(node.get_fork_bit());
+		EXPECT_FALSE(node2.get_fork_bit());
+	}
+	
+	class FernTest : public ::testing::Test { //identical to NodeManipulationTest fixture for now
 	protected:
 		clau::Interval span1, span2;
 		clau::Region<2> region;
 		clau::bin_type num_bins;
 		clau::Fern<2> fern;
+		clau::Fern<2>::node_handle node;
 		
-		FernTest() : span1(0.0, 1.0), span2(2.0, 4.0), region(), num_bins(3), fern(num_bins) {
+		FernTest() : span1(0.0, 1.0), span2(2.0, 4.0), 
+				region(), num_bins(3), 
+				fern(num_bins), node() {
 			region(1) = span1;
 			region(2) = span2;
 			fern.set_bounds(region);
+			node = fern.begin();
 		}
 		
-		void GrowTree() {
-			auto node = fern.begin();
-			node.left().split()
+		void ExpandFern() {
+			using namespace clau;
+			node.left().set_leaf_bin(1);
+			Fern<2>::Division division(true, 2);
+			node.split_leaf(division);
+		
+			node.right();
+			division.bit = false;
+			node.split_leaf(division);
+			node.right().set_leaf_bin(0);
+		
+			node.root().right();
+			EXPECT_TRUE(node.set_leaf_bin(2));
+			division.bit = true;
+			division.dimension = 1;
+			node.split_leaf(division);
+			node.root();
 		}
 		
 		//virtual void SetUp() {}
@@ -235,18 +296,18 @@ namespace {
 	    	// You can do clean-up work that doesn't throw exceptions here.
 	  	}
 	};
-	/*
-	TEST_F(FernTest, MethodBarDoesAbc) {
-
-		Fern f;
-		EXPECT_EQ(0, f.Bar(input_filepath, output_filepath));
+	
+	TEST_F(FernTest, Querying) {
+		using namespace clau;
 	}
 
-	// Tests that Foo does Xyz.
-	TEST_F(FernTest, DoesXyz) {
-	  // Exercises the Xyz feature of Foo.
+	TEST_F(FernTest, Copying) {
+		using namespace clau;
 	}
-	*/
+	
+	//need to write Fern::is_valid() to check random operations
+	//it might help to write a DFS iterator to isolate walks from randomness
+	
 }  // namespace
 
 int main(int argc, char **argv) {

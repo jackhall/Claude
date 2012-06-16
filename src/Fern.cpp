@@ -306,6 +306,8 @@ namespace clau {
 				if( other.is_leaf() ) 
 					parent_ptr->left = new Leaf( *static_cast<Leaf*>(other.current) );
 				else 	parent_ptr->left = new Fork( *static_cast<Fork*>(other.current) );
+				left();
+				current->parent = parent_ptr;
 				return true;
 				
 			} else if( parent_ptr->right == target_ptr ) {
@@ -315,6 +317,8 @@ namespace clau {
 				if( other.is_leaf() ) 
 					parent_ptr->right = new Leaf( *static_cast<Leaf*>(other.current) );
 				else 	parent_ptr->right = new Fork( *static_cast<Fork*>(other.current) );
+				right();
+				current->parent = parent_ptr;
 				return true;
 			
 			} else {
@@ -384,8 +388,11 @@ namespace clau {
 			auto fork_ptr = static_cast<Fork*>(current);
 			if(fork_ptr->left->leaf && fork_ptr->right->leaf) {
 			
-				//either keep bin of larger interval or left leaf 
-				bin_type kept_bin = static_cast<Leaf*>(fork_ptr->left)->bin;
+				//either keep bin of _larger interval_ or left leaf 
+				bin_type kept_bin; 
+				if(fork_ptr->value.bit) kept_bin = static_cast<Leaf*>(fork_ptr->left)->bin;
+				else kept_bin = static_cast<Leaf*>(fork_ptr->right)->bin;
+				
 				up();
 				auto parent_ptr = static_cast<Fork*>(current); 
 				if( parent_ptr->left == fork_ptr ) {
