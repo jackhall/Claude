@@ -202,13 +202,13 @@ namespace clau {
 		if(value.bit) boundary = interval.lower + ratio*(interval.upper - interval.lower);
 		else boundary = interval.lower + (1-ratio)*(interval.upper - interval.lower);
 		
-		if(!left->leaf) { 
+		if( !(left->leaf) ) { 
 			Region<D> left_bounds = bounds;
 			left_bounds(value.dimension).upper = boundary;
 			static_cast<Fork*>(left)->update_boundary(left_bounds);
 		}
 		
-		if(!right->leaf) {
+		if( !(right->leaf) ) {
 			Region<D> right_bounds = bounds;
 			right_bounds(value.dimension).lower = boundary;
 			static_cast<Fork*>(right)->update_boundary(right_bounds);
@@ -284,6 +284,7 @@ namespace clau {
 				else 	parent_ptr->left = new Fork( *static_cast<Fork*>(other.current) );
 				left();
 				current->parent = parent_ptr;
+				fern->update_boundary();
 				return true;
 				
 			} else if( parent_ptr->right == target_ptr ) {
@@ -295,6 +296,7 @@ namespace clau {
 				else 	parent_ptr->right = new Fork( *static_cast<Fork*>(other.current) );
 				right();
 				current->parent = parent_ptr;
+				fern->update_boundary();
 				return true;
 			
 			} else {
@@ -320,6 +322,7 @@ namespace clau {
 				parent_ptr->left = new Fork(parent_ptr, new_value, 
 							    kept_bin, kept_bin);
 				left();
+				fern->update_boundary();
 				return true;
 			
 			} else if ( parent_ptr->right == leaf_ptr ) {
@@ -329,6 +332,7 @@ namespace clau {
 				parent_ptr->right = new Fork(parent_ptr, new_value, 
 							     kept_bin, kept_bin);
 				right();
+				fern->update_boundary();
 				return true;
 			
 			} else {
@@ -397,6 +401,12 @@ namespace clau {
 	}
 	
 	template<dim_type D>
+	num_type Fern<D>::node_handle::get_fork_boundary() const {
+		if( is_leaf() ) return 0.0;
+		else return static_cast<Fork*>(current)->boundary;
+	}
+	
+	template<dim_type D>
 	dim_type Fern<D>::node_handle::get_fork_dimension() const {
 		if( is_leaf() ) return 0;
 		else return static_cast<Fork*>(current)->value.dimension;
@@ -411,10 +421,10 @@ namespace clau {
 	template<dim_type D>
 	bool Fern<D>::node_handle::set_fork_dimension(const dim_type new_dimension) {
 		//returns false for leaves or if new_dimension is out-of-range
-		if( !current->leaf && (new_dimension <= D) && (new_dimension > 0) ) {
+		if( !is_leaf() && (new_dimension <= D) && (new_dimension > 0) ) {
 		
 			static_cast<Fork*>(current)->value.dimension = new_dimension;
-			fern->root->update_boundary(fern->root_region); //segfaults
+			fern->update_boundary(); 
 			return true;
 			
 		} else return false;
@@ -423,10 +433,10 @@ namespace clau {
 	template<dim_type D>
 	bool Fern<D>::node_handle::set_fork_bit(const bool new_bit) {
 		//returns false for leaves
-		if( !current->leaf ) {
+		if( !is_leaf() ) {
 		
 			static_cast<Fork*>(current)->value.bit = new_bit;
-			fern->root->update_boundary(fern->root_region); //segfaults
+			fern->update_boundary(); //doesn't run properly
 			return true;
 			
 		} else return false;

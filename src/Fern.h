@@ -76,9 +76,9 @@ namespace clau {
 		
 		void set_uniform(const Interval interval) 
 			{ for(int i=D-1; i>=0; --i) limits[i] = interval; }
-		Interval& operator()(const unsigned int dimension) 
+		Interval& operator()(const dim_type dimension) 
 			{ return limits[dimension-1]; }
-		const Interval& operator()(const unsigned int dimension) const 
+		const Interval& operator()(const dim_type dimension) const 
 			{ return limits[dimension-1]; }
 	};
 	
@@ -92,7 +92,7 @@ namespace clau {
 	struct Point {
 		std::array<num_type, D> coordinates;
 		
-		Point() { for(int i=D-1; i>=0; --i) coordinates = 0.0; }
+		Point() { for(int i=D-1; i>=0; --i) coordinates[i] = 0.0; }
 		Point(const Point& rhs) = default;
 		Point& operator=(const Point& rhs) = default;
 		~Point() = default;
@@ -189,6 +189,8 @@ namespace clau {
 		
 		friend node_handle;
 		
+		void update_boundary() { root->update_boundary(root_region); }
+		
 	public:
 		Fern(const bin_type numBins=1.0);
 		Fern(const Region<D> bounds, const bin_type numBins=1.0);
@@ -229,8 +231,8 @@ namespace clau {
 			node_handle& operator=(const node_handle& rhs) = default;
 			~node_handle() = default;
 			
-			bool operator==(const node_handle& rhs) { return current == rhs.current; }
-			bool operator!=(const node_handle& rhs) { return current != rhs.current; }
+			bool operator==(const node_handle& rhs) const { return current == rhs.current; }
+			bool operator!=(const node_handle& rhs) const { return current != rhs.current; }
 			
 			node_handle& up() { 
 				if(current->parent != nullptr) current = current->parent; 
@@ -265,6 +267,7 @@ namespace clau {
 			bool set_leaf_bin(const bin_type new_bin);
 			
 			bool merge_fork();
+			num_type get_fork_boundary() const;
 			dim_type get_fork_dimension() const;
 			bool get_fork_bit() const;
 			bool set_fork_dimension(const dim_type new_dimension);
@@ -283,7 +286,7 @@ namespace clau {
 		private:
 			node_handle node;
 			std::vector<bool> branch_stack;
-			dfs_iterator(Fern* pFern) : node_handle( pFern->begin() ) {}
+			dfs_iterator(Fern* pFern) : node( pFern->begin() ) {}
 			friend dfs_iterator Fern::sbegin();
 		
 		public:
@@ -292,8 +295,8 @@ namespace clau {
 			dfs_iterator& operator=(const dfs_iterator& rhs) = default;
 			~dfs_iterator() = default;
 			
-			bool operator==(const dfs_iterator& rhs) { return node == rhs.node; }
-			bool operator!=(const dfs_iterator& rhs) { return !(&this == rhs); }
+			bool operator==(const dfs_iterator& rhs) const { return node == rhs.node; }
+			bool operator!=(const dfs_iterator& rhs) const { return !(&this == rhs); }
 			dfs_iterator& operator++();
 			dfs_iterator operator++(int);
 			
@@ -303,6 +306,7 @@ namespace clau {
 			bool set_leaf_bin(const bin_type new_bin) {
 				 return node.set_leaf_bin(new_bin); }
 			
+			num_type get_fork_boundary() const { return node.get_fork_boundary(); }
 			dim_type get_fork_dimension() const { return node.get_fork_dimension(); }
 			bool get_fork_bit() const { return node.get_fork_bit(); }
 			bool set_fork_dimension(const dim_type new_dimension) 

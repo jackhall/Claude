@@ -253,7 +253,7 @@ namespace {
 		EXPECT_FALSE(node2.get_fork_bit());
 	}
 	
-	class FernTest : public ::testing::Test { //identical to NodeManipulationTest fixture for now
+	class FernTest : public ::testing::Test { //very similar to NodeManipulationTest fixture
 	protected:
 		clau::Interval span1, span2;
 		clau::Region<2> region;
@@ -275,6 +275,8 @@ namespace {
 			node.left().set_leaf_bin(1);
 			Fern<2>::Division division(true, 2);
 			node.split_leaf(division);
+			node.left().set_leaf_bin(0);
+			node.up();
 		
 			node.right();
 			division.bit = false;
@@ -282,11 +284,67 @@ namespace {
 			node.right().set_leaf_bin(0);
 		
 			node.root().right();
-			EXPECT_TRUE(node.set_leaf_bin(2));
+			node.set_leaf_bin(2);
 			division.bit = true;
 			division.dimension = 1;
 			node.split_leaf(division);
+			node.right().set_leaf_bin(0);
 			node.root();
+		}
+		
+		bool CheckEqual(clau::Fern<2>& one, clau::Fern<2>& two) {
+			EXPECT_EQ(one.get_bounds(), two.get_bounds());
+			EXPECT_EQ(one.get_num_bins(), two.get_num_bins());
+		
+			auto iter = one.sbegin();
+			auto iter2 = two.sbegin();
+			while( !iter.is_null() && !iter2.is_null() ) {
+				EXPECT_EQ(iter.is_leaf(), iter2.is_leaf());
+				if( iter.is_leaf() ) {
+					if( iter.get_leaf_bin() != iter2.get_leaf_bin() ) 
+						return false;
+				} else {
+					if( iter.get_fork_boundary() != iter2.get_fork_boundary() ) 
+						return false;
+				}
+				++iter; ++iter2;
+			}
+			EXPECT_TRUE( iter.is_null() && iter2.is_null() );
+			return true;
+		}
+		
+		void CheckQuery() {
+			using namespace clau;
+			Point<2> point;
+			point(1) = 0.38;
+			point(2) = 3.234;
+			EXPECT_EQ(0, fern.query(point));
+			
+			point(2) = 3.238;
+			EXPECT_EQ(1, fern.query(point));
+			
+			point(2) = 3.526;
+			EXPECT_EQ(1, fern.query(point));
+			
+			point(2) = 3.53;
+			EXPECT_EQ(0, fern.query(point));
+			
+			point(1) = .384;
+			point(2) = 2.618;
+			EXPECT_EQ(2, fern.query(point));
+			
+			point(2) = 3.382;
+			EXPECT_EQ(2, fern.query(point));
+			
+			point(2) = 3.764;
+			EXPECT_EQ(2, fern.query(point));
+			
+			point(1) = .762;
+			point(2) = 3.0;
+			EXPECT_EQ(2, fern.query(point));
+			
+			point(1) = .766;
+			EXPECT_EQ(0, fern.query(point));
 		}
 		
 		//virtual void SetUp() {}
@@ -299,14 +357,30 @@ namespace {
 	
 	TEST_F(FernTest, Querying) {
 		using namespace clau;
-		//check what happens after split and prune (did update_boundary() run?)
+		ExpandFern();
+		CheckQuery();
+		//check what happens after split and merge? 
+		//check what happens after copy?
 	}
 
 	TEST_F(FernTest, Copying) {
 		using namespace clau;
+		ExpandFern();
+		Fern<2> fern2(fern);
+		EXPECT_TRUE(CheckEqual(fern, fern2));
+		
+		//flip a bit and check boundaries again
+		node.left();
+		EXPECT_TRUE(node.set_fork_bit(false));
+		EXPECT_FALSE(CheckEqual(fern, fern2));
+		
+		//copy assignment to reverse the previous change
+		fern = fern2;
+		EXPECT_TRUE(CheckEqual(fern, fern2));
 	}
 	
-	//need to write Fern::is_valid() to check random operations
+	//write CheckValid() to check random operations?
+	//check for randomness?
 	
 }  // namespace
 
