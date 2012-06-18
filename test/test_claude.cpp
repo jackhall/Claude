@@ -299,6 +299,7 @@ namespace {
 	
 	TEST_F(FernTest, Querying) {
 		using namespace clau;
+		//check what happens after split and prune (did update_boundary() run?)
 	}
 
 	TEST_F(FernTest, Copying) {
@@ -306,7 +307,6 @@ namespace {
 	}
 	
 	//need to write Fern::is_valid() to check random operations
-	//it might help to write a DFS iterator to isolate walks from randomness
 	
 }  // namespace
 

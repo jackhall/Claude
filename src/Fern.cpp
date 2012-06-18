@@ -226,38 +226,14 @@ namespace clau {
 	//==================== Fern::node_handle methods ============
 	template<dim_type D>
 	typename Fern<D>::node_handle&  Fern<D>::node_handle::random_node() {
-		auto start = current; //save current position
-		while( !is_root() ) up(); //go to root
-		auto choice = current; 
-		
-		std::vector<bool> branch_stack; //stack recording traversal choices: left=false, right=true
-		unsigned int n=1; //number of nodes traversed so far
-		while(true) { 
-			//test current node
-			if( (1.0/n) >= std::generate_canonical<num_type,16>(fern->generator) ) 
-				choice = current;
-			++n;
-			
-			//find new node
-			if( is_leaf() ) {
-			
-				up();
-				while(branch_stack.back()) { //until we reach an unexplored right branch
-					up();
-					branch_stack.pop_back();
-					if(branch_stack.size() == 0) { //no more unexplored branches
-						current = choice;
-						return *this;
-					}
-				}
-				
-				right();
-				branch_stack.back() = true;
+		auto it = fern->sbegin(); //depth-first search iterator
+		auto choice = it; 
 	
-			} else {
-				left();
-				branch_stack.push_back(false);
-			}
+		unsigned int n=1; //number of nodes traversed so far
+		while( !it.is_null() ) { 
+			if( (1.0/n) >= std::generate_canonical<num_type,16>(fern->generator) ) 
+				choice = it;
+			++n; ++it;
 		}
 	}
 	
@@ -518,6 +494,39 @@ namespace clau {
 				}
 			}
 		}
+	}
+	
+	//=================== Fern::dfs_iterator methods ==================
+	template<dim_type D>
+	typename Fern<D>::dfs_iterator&  Fern<D>::dfs_iterator::operator++() {
+		if( node.is_leaf() ) {
+		
+			node.up();
+			while(branch_stack.back()) { //until we reach an unexplored right branch
+				node.up();
+				branch_stack.pop_back();
+				if(branch_stack.size() == 0) { //no more unexplored branches
+					node = node_handle();
+					return *this;
+				}
+			}
+			
+			node.right();
+			branch_stack.back() = true;
+
+		} else {
+			node.left();
+			branch_stack.push_back(false);
+		}
+		
+		return *this;
+	}
+	
+	template<dim_type D>
+	typename Fern<D>::dfs_iterator  Fern<D>::dfs_iterator::operator++(int) {
+		auto temp = *this;
+		operator++();
+		return temp;
 	}
 	
 } //namespace clau

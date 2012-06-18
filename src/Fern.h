@@ -207,7 +207,7 @@ namespace clau {
 		
 		void mutate();
 		void crossover(const Fern& other);
-		bin_type query(const Point<D> point) { return root->query(point); }
+		bin_type query(const Point<D> point) const { return root->query(point); }
 		
 		template<dim_type T>
 		friend std::ostream& operator<<(std::ostream& out, const Fern<T>& fern);
@@ -220,11 +220,11 @@ namespace clau {
 			Node* current;
 			Fern* fern;
 			
-			node_handle(Node* root) : current(root) {}
-			friend node_handle Fern::begin() const;
+			node_handle(Fern* pFern) : current(pFern->root), fern(pFern) {}
+			friend node_handle Fern::begin();
 			
 		public:
-			node_handle() : current(nullptr) {}
+			node_handle() : current(nullptr), fern(nullptr) {}
 			node_handle(const node_handle& rhs) = default;
 			node_handle& operator=(const node_handle& rhs) = default;
 			~node_handle() = default;
@@ -276,8 +276,49 @@ namespace clau {
 			bool belongs_to(const Fern& owner) { return fern==&owner; }
 		}; //class node_handle
 		
-		node_handle begin() const { return node_handle(root); }
+		node_handle begin() { return node_handle(this); }
 		bool random_analagous(node_handle one, node_handle two); //needs access to rng generator
+		
+		class dfs_iterator {
+		private:
+			node_handle node;
+			std::vector<bool> branch_stack;
+			dfs_iterator(Fern* pFern) : node_handle( pFern->begin() ) {}
+			friend dfs_iterator Fern::sbegin();
+		
+		public:
+			dfs_iterator() = default;
+			dfs_iterator(const dfs_iterator& rhs) = default;
+			dfs_iterator& operator=(const dfs_iterator& rhs) = default;
+			~dfs_iterator() = default;
+			
+			bool operator==(const dfs_iterator& rhs) { return node == rhs.node; }
+			bool operator!=(const dfs_iterator& rhs) { return !(&this == rhs); }
+			dfs_iterator& operator++();
+			dfs_iterator operator++(int);
+			
+			void mutate_value() { node.mutate_value(); }
+			
+			bin_type get_leaf_bin() const { return node.get_leaf_bin(); }
+			bool set_leaf_bin(const bin_type new_bin) {
+				 return node.set_leaf_bin(new_bin); }
+			
+			dim_type get_fork_dimension() const { return node.get_fork_dimension(); }
+			bool get_fork_bit() const { return node.get_fork_bit(); }
+			bool set_fork_dimension(const dim_type new_dimension) 
+				{ return node.get_fork_dimension(new_dimension); }
+			bool set_fork_bit(const bool new_bit) 
+				{ return node.set_fork_bit(new_bit); }
+			
+			bool is_leaf() const { return node.is_leaf(); }
+			bool is_root() const { return node.is_root(); }
+			bool is_null() const { return node == node_handle(); }
+			
+			node_handle get_handle() const { return node; }
+		};
+		
+		dfs_iterator sbegin() { return dfs_iterator(this); }
+		
 	}; //class Fern
 	
 } //namespace clau
