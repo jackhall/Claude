@@ -1,36 +1,39 @@
 CC = g++
-CFLAGS = -std=c++0x -fPIC -g
-OBJECTS = Node.o Fork.o Leaf.o Fern.o
+CFLAGS = -std=c++11 -fPIC -g -I /usr/include/python2.7
 
-libClaude.so: $(OBJECTS)
-	gcc -g -shared -Wl,-soname,libClaude.so.1 -o libClaude.so.1.0 $(OBJECTS); \
-	ln -s libClaude.so.1.0 libClaude.so.1; \
-	ln -s libClaude.so.1 libClaude.so
+libfern.so: Fern.h Fern.cpp fernpy.cpp
+	$(CC) $(CFLAGS) -c fernpy.cpp
+	$(CC) -g -shared -lpython2.7 -lboost_python -o fernpy.so fernpy.o
 
-Node.o : Node.cpp Node.h
-	$(CC) $(CFLAGS) -c Node.cpp
+#libClaude.so: $(OBJECTS)
+#	gcc -g -shared -Wl,-soname,libClaude.so.1 -o libClaude.so.1.0 $(OBJECTS); \
+#	ln -s libClaude.so.1.0 libClaude.so.1; \
+#	ln -s libClaude.so.1 libClaude.so
 
-Fork.o : Fork.cpp Fork.h Node.h
-	$(CC) $(CFLAGS) -c Fork.cpp
+#Node.o : Node.cpp Node.h
+#	$(CC) $(CFLAGS) -c Node.cpp
 
-Leaf.o : Leaf.cpp Leaf.h Node.h Fork.h
-	$(CC) $(CFLAGS) -c Leaf.cpp
+#Fork.o : Fork.cpp Fork.h Node.h
+#	$(CC) $(CFLAGS) -c Fork.cpp
 
-Fern.o : Fern.cpp Node.h Fork.h Leaf.h Fern.h
-	$(CC) $(CFLAGS) -c Fern.cpp
+#Leaf.o : Leaf.cpp Leaf.h Node.h Fork.h
+#	$(CC) $(CFLAGS) -c Leaf.cpp
 
-clean :
-	rm $(OBJECTS); \
-	rm libClaude.*
+#Fern.o : Fern.cpp Node.h Fork.h Leaf.h Fern.h
+#	$(CC) $(CFLAGS) -c Fern.cpp
+
+#clean :
+#	rm $(OBJECTS); \
+#	rm libClaude.*
 	
-install :
-	sudo mv libClaude.so /usr/lib64/.; \
-	sudo mv libClaude.so.1.0 /usr/lib64/.; \
-	sudo ldconfig
+#install :
+#	sudo mv libClaude.so /usr/lib64/.; \
+#	sudo mv libClaude.so.1.0 /usr/lib64/.; \
+#	sudo ldconfig
 
-remove : 
-	rm $(OBJECTS); \
-	rm libClaude.*; \
-	sudo rm /usr/lib64/libClaude.*; \
-	sudo ldconfig
+#remove : 
+#	rm $(OBJECTS); \
+#	rm libClaude.*; \
+#	sudo rm /usr/lib64/libClaude.*; \
+#	sudo ldconfig
 	

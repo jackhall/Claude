@@ -48,10 +48,10 @@ namespace clau {
 		friend std::ostream& operator<<(std::ostream& out, const Interval& interval);
 	};
 	
-	std::ostream& operator<<(std::ostream& out, const Interval& interval) {
-		out << "[ " << interval.lower << " , " << interval.upper << " ]";
-		return out;
-	}
+	//std::ostream& operator<<(std::ostream& out, const Interval& interval) {
+	//	out << "[" << interval.lower << ", " << interval.upper << "]";
+	//	return out;
+	//}
 	
 	template<dim_type D>
 	struct Region {
@@ -112,6 +112,7 @@ namespace clau {
 			bool bit;
 			dim_type dimension;
 			
+			Division() : bit(false), dimension(1) {}
 			Division(const bool bBit, const dim_type dim=1) : bit(bBit), dimension(dim) 
 				{ if(dim <= 0 || dim > D) dimension = 1; }
 		};
@@ -192,7 +193,7 @@ namespace clau {
 		void update_boundary() { root->update_boundary(root_region); }
 		
 	public:
-		Fern(const bin_type numBins=1.0);
+		explicit Fern(const bin_type numBins=1.0);
 		Fern(const Region<D> bounds, const bin_type numBins=1.0);
 		Fern(const Fern& rhs);
 		Fern& operator=(const Fern& rhs);

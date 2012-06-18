@@ -538,8 +538,14 @@ namespace clau {
 		operator++();
 		return temp;
 	}
-	
+
 } //namespace clau
+
+//============== Helper class methods ============
+std::ostream& operator<<(std::ostream& out, const clau::Interval& interval) {
+	out << "[" << interval.lower << ", " << interval.upper << "]";
+	return out;
+}
 
 #endif
 
