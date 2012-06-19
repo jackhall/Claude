@@ -81,7 +81,7 @@ namespace clau {
 	template<dim_type D>
 	void Fern<D>::mutate() { 
 		auto locus = begin();
-		locus.random_node();
+		locus.random();
 		std::bernoulli_distribution  mutation_type_chance(0.5);
 
 		if( mutation_type_chance(generator) ) 
@@ -91,9 +91,9 @@ namespace clau {
 	
 	template<dim_type D>
 	void Fern<D>::crossover(const Fern& other) { 
-		auto target = begin();
-		auto source = other.begin();
-		random_analagous(target, source);
+		auto target = begin(); 
+		auto source = other.cbegin();
+		random_analagous(target, source); 
 		target.splice(source);
 	}
 	
@@ -102,7 +102,7 @@ namespace clau {
 		
 		using namespace std;
 		std::vector<bool> branch_stack;
-		auto node = fern.begin();
+		auto node = fern.cbegin();
 		
 		out << "Interval:" << endl;
 		for(int i=T; i>0; i--)
@@ -112,6 +112,78 @@ namespace clau {
 		fern.root->print(out, 0);
 		
 		return out;
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::random_analagous(Fern<D>::const_node_handle& one, Fern<D>::const_node_handle& two) {
+		//returns false if ferns have different numbers of bins
+		auto original_one = one;
+		auto original_two = two;
+		while( !one.is_root() ) one.up();
+		while( !two.is_root() ) two.up();
+		if( one == two ) { //if both handles are from the same fern, just pick random node
+		
+			one.random();
+			two = one;
+			return true;
+			
+		} else if( one.get_max_bin() != two.get_max_bin() ) return false; 
+		  else {
+			auto choice_one = one;
+			auto choice_two = two;
+			
+			std::vector<bool> branch_stack; //stack recording traversal choices: left=false, right=true
+			unsigned int n=1; //number of nodes traversed so far
+			while(true) {
+				if(one.is_leaf() || two.is_leaf()) { 
+				
+					one.up(); two.up();
+					while(branch_stack.back()) { //until we reach an unexplored right branch
+						one.up(); two.up();
+						branch_stack.pop_back();
+						if(branch_stack.size() == 0) { //no more unexplored branches
+							one = choice_one;
+							two = choice_two;
+							return true;
+						}
+					}
+				
+					one.right(); two.right();
+					branch_stack.back() = true;
+					
+				} else {
+					//test current node
+					if( (1.0/n) >= std::generate_canonical<num_type,16>(generator) ) {
+						choice_one = one;
+						choice_two = two;
+					}
+					++n;
+				
+					//next left
+					one.left(); two.left();
+					branch_stack.push_back(false);
+				}
+			}
+		}
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::random_analagous(Fern<D>::node_handle& one, Fern<D>::const_node_handle& const_two) { 
+		auto const_one = const_node_handle(one);
+		return random_analagous(const_one, const_two); 
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::random_analagous(Fern<D>::const_node_handle& const_one, Fern<D>::node_handle& two) { 
+		auto const_two = const_node_handle(two);
+		return random_analagous(const_one, const_two); 
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::random_analagous(Fern<D>::node_handle& one, Fern<D>::node_handle& two) { 
+		auto const_one = const_node_handle(one);
+		auto const_two = const_node_handle(two);
+		return random_analagous(const_one, const_two); 
 	}
 	
 	//==================== Fern::Fork methods ===================
@@ -225,7 +297,7 @@ namespace clau {
 
 	//==================== Fern::node_handle methods ============
 	template<dim_type D>
-	typename Fern<D>::node_handle&  Fern<D>::node_handle::random_node() {
+	typename Fern<D>::node_handle&  Fern<D>::node_handle::random() {
 		auto it = fern->sbegin(); //depth-first search iterator
 		auto choice = it; 
 	
@@ -235,6 +307,8 @@ namespace clau {
 				choice = it;
 			++n; ++it;
 		}
+		*this = choice.get_handle();
+		return *this;
 	}
 	
 	template<dim_type D>
@@ -269,7 +343,13 @@ namespace clau {
 	}
 	
 	template<dim_type D>
-	bool Fern<D>::node_handle::splice(const node_handle& other) {
+	bool Fern<D>::node_handle::splice(const node_handle& other) { 
+		auto const_other = const_node_handle(other);
+		return splice(const_other); 
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::node_handle::splice(const const_node_handle& other) {
 		//returns false if current points to a ghost or root
 		if( !is_root() ) {
 			auto target_ptr = current;
@@ -280,8 +360,8 @@ namespace clau {
 				delete target_ptr;
 				target_ptr = nullptr;
 				if( other.is_leaf() ) 
-					parent_ptr->left = new Leaf( *static_cast<Leaf*>(other.current) );
-				else 	parent_ptr->left = new Fork( *static_cast<Fork*>(other.current) );
+					parent_ptr->left = new Leaf( *static_cast<const Leaf*>(other.current) );
+				else 	parent_ptr->left = new Fork( *static_cast<const Fork*>(other.current) );
 				left();
 				current->parent = parent_ptr;
 				fern->update_boundary();
@@ -292,8 +372,8 @@ namespace clau {
 				delete target_ptr;
 				target_ptr = nullptr;
 				if( other.is_leaf() ) 
-					parent_ptr->right = new Leaf( *static_cast<Leaf*>(other.current) );
-				else 	parent_ptr->right = new Fork( *static_cast<Fork*>(other.current) );
+					parent_ptr->right = new Leaf( *static_cast<const Leaf*>(other.current) );
+				else 	parent_ptr->right = new Fork( *static_cast<const Fork*>(other.current) );
 				right();
 				current->parent = parent_ptr;
 				fern->update_boundary();
@@ -345,8 +425,8 @@ namespace clau {
 	
 	template<dim_type D>
 	bin_type Fern<D>::node_handle::get_leaf_bin() const {
-		if( !is_leaf() ) return 0;
-		else return static_cast<Leaf*>(current)->bin;
+		auto const_node = const_node_handle(*this);
+		return const_node.get_leaf_bin();
 	}
 	
 	template<dim_type D>
@@ -402,20 +482,20 @@ namespace clau {
 	
 	template<dim_type D>
 	num_type Fern<D>::node_handle::get_fork_boundary() const {
-		if( is_leaf() ) return 0.0;
-		else return static_cast<Fork*>(current)->boundary;
+		auto const_node = const_node_handle(*this);
+		return const_node.get_fork_boundary();
 	}
 	
 	template<dim_type D>
 	dim_type Fern<D>::node_handle::get_fork_dimension() const {
-		if( is_leaf() ) return 0;
-		else return static_cast<Fork*>(current)->value.dimension;
+		auto const_node = const_node_handle(*this);
+		return const_node.get_fork_dimension();
 	}
 	
 	template<dim_type D>
 	bool Fern<D>::node_handle::get_fork_bit() const {
-		if( is_leaf() ) return false;
-		else return static_cast<Fork*>(current)->value.bit;
+		auto const_node = const_node_handle(*this);
+		return const_node.get_fork_bit();
 	}
 	
 	template<dim_type D>
@@ -444,66 +524,60 @@ namespace clau {
 	
 	template<dim_type D>
 	bool Fern<D>::node_handle::is_ghost() const {
-		
-		if( is_root() ) return false;
-		auto target_ptr = current;
-		auto parent_ptr = static_cast<Fork*>(current->parent);
-		if( (parent_ptr->left == target_ptr) || (parent_ptr->right == target_ptr) ) 
-			return false;
-		else return true;
+		auto const_node = const_node_handle(*this);
+		return const_node.is_ghost();
+	}
+	
+	//=================== Fern::const_node_handle methods =============
+	template<dim_type D>
+	typename Fern<D>::const_node_handle&  Fern<D>::const_node_handle::random() {
+		/* need to fill this in later
+		auto it = fern->sbegin(); //depth-first search iterator, sbegin is non-const!
+		auto choice = it; 
+	
+		unsigned int n=1; //number of nodes traversed so far
+		while( !it.is_null() ) { 
+			if( (1.0/n) >= std::generate_canonical<num_type,16>(fern->generator) ) 
+				choice = it;
+			++n; ++it;
+		} 
+		*this = choice.get_handle(); */
+		return *this;
 	}
 	
 	template<dim_type D>
-	bool Fern<D>::random_analagous(Fern<D>::node_handle one, Fern<D>::node_handle two) {
-		//returns false if ferns have different numbers of bins
-		auto original_one = one;
-		auto original_two = two;
-		while( !one.is_root() ) one.up();
-		while( !two.is_root() ) two.up();
-		if( one == two ) { //if both handles are from the same fern, just pick random node
-		
-			one.random_node;
-			two = one;
-			return true;
-			
-		} else if( one.fern->max_bin != two.fern->max_bin) return false; 
-		  else {
-			auto choice_one = one;
-			auto choice_two = two;
-			
-			std::vector<bool> branch_stack; //stack recording traversal choices: left=false, right=true
-			unsigned int n=1; //number of nodes traversed so far
-			while(true) {
-				if(one.is_leaf() || two.is_leaf()) { 
-				
-					one.up(); two.up();
-					while(branch_stack.back()) { //until we reach an unexplored right branch
-						one.up(); two.up();
-						branch_stack.pop_back();
-						if(branch_stack.size() == 0) { //no more unexplored branches
-							one = choice_one;
-							two = choice_two;
-							return true;
-						}
-					}
-				
-					one.right(); two.right();
-					branch_stack.back() = true;
-					
-				} else {
-					//test current node
-					if( (1.0/n) >= std::generate_canonical<num_type,16>(generator) ) {
-						choice_one = one;
-						choice_two = two;
-					}
-					++n;
-				
-					//next left
-					one.left(); two.left();
-					branch_stack.push_back(false);
-				}
-			}
-		}
+	bin_type  Fern<D>::const_node_handle::get_leaf_bin() const {
+		if( !is_leaf() ) return 0;
+		else return static_cast<const Leaf*>(current)->bin;
+	}
+	
+	template<dim_type D>
+	num_type  Fern<D>::const_node_handle::get_fork_boundary() const {
+		if( is_leaf() ) return 0.0;
+		else return static_cast<const Fork*>(current)->boundary;
+	}
+	
+	template<dim_type D>
+	dim_type  Fern<D>::const_node_handle::get_fork_dimension() const {
+		if( is_leaf() ) return 0;
+		else return static_cast<const Fork*>(current)->value.dimension;
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::const_node_handle::get_fork_bit() const {
+		if( is_leaf() ) return false;
+		else return static_cast<const Fork*>(current)->value.bit;
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::const_node_handle::is_ghost() const {
+	
+		if( is_root() ) return false;
+		auto target_ptr = current;
+		auto parent_ptr = static_cast<const Fork*>(current->parent);
+		if( (parent_ptr->left == target_ptr) || (parent_ptr->right == target_ptr) ) 
+			return false;
+		else return true;
 	}
 	
 	//=================== Fern::dfs_iterator methods ==================
@@ -542,10 +616,10 @@ namespace clau {
 } //namespace clau
 
 //============== Helper class methods ============
-std::ostream& operator<<(std::ostream& out, const clau::Interval& interval) {
-	out << "[" << interval.lower << ", " << interval.upper << "]";
-	return out;
-}
+//std::ostream& operator<<(std::ostream& out, const clau::Interval& interval) {
+//	out << "[" << interval.lower << ", " << interval.upper << "]";
+//	return out;
+//}
 
 #endif
 
