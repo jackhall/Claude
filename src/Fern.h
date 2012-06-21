@@ -57,7 +57,9 @@ namespace clau {
 	class Region {
 	private:
 		std::array<Interval, D> limits;
-	public:	
+	public:
+		typedef Interval value_type;
+
 		Region() { 
 			Interval null_interval;
 			for(int i=D-1; i>=0; --i) limits[i] = null_interval;
@@ -72,6 +74,7 @@ namespace clau {
 			return true;
 		}
 		bool operator!=(const Region& rhs) const { return !(*this==rhs); }
+		
 		template<dim_type T> 
 		friend std::ostream& operator<<(std::ostream& out, const Region<T>& region);
 		
@@ -81,6 +84,7 @@ namespace clau {
 			{ return limits[dimension-1]; }
 		const Interval& operator()(const dim_type dimension) const 
 			{ return limits[dimension-1]; }
+		dim_type size() const { return D; }
 	};
 	
 	template<dim_type T>
@@ -94,22 +98,41 @@ namespace clau {
 	private:
 		std::array<num_type, D> coordinates;
 	public:
+		typedef num_type value_type;
+
 		Point() { for(int i=D-1; i>=0; --i) coordinates[i] = 0.0; }
 		Point(const Point& rhs) = default;
 		Point& operator=(const Point& rhs) = default;
 		~Point() = default;
 		
-		num_type& operator()(const unsigned int dimension) 
+		bool operator==(const Point& rhs) const { 
+			for(int i=D-1; i>=0; --i) if(coordinates[i] != rhs.coordinates[i]) return false;
+			return true;
+		}
+		bool operator!=(const Point& rhs) const { return !(*this==rhs); }
+		
+		template<dim_type T> 
+		friend std::ostream& operator<<(std::ostream& out, const Point<T>& point);
+		
+		num_type& operator()(const dim_type dimension) 
 			{ return coordinates[dimension-1]; }
-		const num_type& operator()(const unsigned int dimension) const 
+		const num_type& operator()(const dim_type dimension) const 
 			{ return coordinates[dimension-1]; }
+		dim_type size() const { return D; }
 	};
+	
+	template<dim_type T>
+	std::ostream& operator<<(std::ostream& out, const Point<T>& point) {
+		out << "(" << point.coordinates[0];
+		for(int i=1; i<T; ++i) out << ", " << point.coordinates[i];
+		out << ")";
+		return out;
+	}
 	
 	template<dim_type D>
 	class Fern {
 	public:
 		class node_handle; //forward declaration as a friend class for Node and Fork
-		class const_node_handle;
 		
 		struct Division {
 			bool bit;
@@ -147,7 +170,6 @@ namespace clau {
 		private:
 			bin_type bin;
 			friend class node_handle;
-			friend class const_node_handle;
 		
 		public:
 			Leaf() = delete;
@@ -173,7 +195,6 @@ namespace clau {
 			Division value;
 			num_type boundary;
 			friend class node_handle;
-			friend class const_node_handle;
 		
 		public:
 			Fork() = delete;
@@ -191,7 +212,7 @@ namespace clau {
 		Fork* root;
 		Region<D> root_region;
 		bin_type max_bin;
-		rng_type generator;
+		mutable rng_type generator;
 		
 		void update_boundary() { root->update_boundary(root_region); }
 		
@@ -205,19 +226,17 @@ namespace clau {
 		void set_bounds(const Region<D> bounds);
 		//left out a way to change the number of bins, might need to add it back later
 		
-		Region<D> get_bounds() const { return root_region; }
+		Region<D> get_region() const { return root_region; }
 		Interval get_bounds(const dim_type dimension) const 
 			{ return root_region(dimension); }
 		bin_type get_num_bins() const { return max_bin+1; }
 		
 		void mutate();
-		void crossover(const Fern& other);
+		void crossover(const Fern& other); 
 		bin_type query(const Point<D> point) const { return root->query(point); }
 		
 		template<dim_type T>
 		friend std::ostream& operator<<(std::ostream& out, const Fern<T>& fern);
-	
-		class const_node_handle;
 	
 		class node_handle {
 		/*
@@ -229,7 +248,6 @@ namespace clau {
 			
 			node_handle(Fern* pFern) : current(pFern->root), fern(pFern) {}
 			friend node_handle Fern::begin();
-			friend class const_node_handle;
 			
 		public:
 			node_handle() : current(nullptr), fern(nullptr) {}
@@ -238,9 +256,7 @@ namespace clau {
 			~node_handle() = default;
 			
 			bool operator==(const node_handle& rhs) const { return current == rhs.current; }
-			bool operator==(const const_node_handle& rhs) const { return current == rhs.current; }
 			bool operator!=(const node_handle& rhs) const { return current != rhs.current; }
-			bool operator!=(const const_node_handle& rhs) const { return current != rhs.current; }
 			
 			node_handle& up() { 
 				if(current->parent != nullptr) current = current->parent; 
@@ -264,16 +280,17 @@ namespace clau {
 			}
 			
 			node_handle& random();
+			bool random_analagous(node_handle& other); 
 			node_handle& root() { while( !is_root() ) up(); return *this; }
 			
 			void mutate_value();
 			bool mutate_structure();
 			bool splice(const node_handle& other);
-			bool splice(const const_node_handle& other);
 			
 			bool split_leaf(const Division new_value);
 			bin_type get_leaf_bin() const;
 			bool set_leaf_bin(const bin_type new_bin);
+			bin_type get_max_bin() const { return fern->max_bin; }
 			
 			bool merge_fork();
 			num_type get_fork_boundary() const;
@@ -288,75 +305,9 @@ namespace clau {
 			bool belongs_to(const Fern& owner) { return fern==&owner; }
 		}; //class node_handle
 		
-		class const_node_handle {
-		/*
-			const node_handle provides safe external access to Nodes. 
-		*/
-		private:
-			const Node* current;
-			const Fern* fern;
-			
-			const_node_handle(const Fern* pFern) : current(pFern->root), fern(pFern) {}
-			friend const_node_handle Fern::cbegin() const;
-			friend class node_handle;
-			
-		public:
-			const_node_handle() : current(nullptr), fern(nullptr) {}
-			const_node_handle(const node_handle& rhs) : current(rhs.current), fern(rhs.fern) {}
-			const_node_handle(const const_node_handle& rhs) = default;
-			const_node_handle& operator=(const const_node_handle& rhs) = default;
-			~const_node_handle() = default;
-			
-			bool operator==(const const_node_handle& rhs) const { return current == rhs.current; }
-			bool operator==(const node_handle& rhs) const { return current == rhs.current; }
-			bool operator!=(const const_node_handle& rhs) const { return current != rhs.current; }
-			bool operator!=(const node_handle& rhs) const { return current != rhs.current; }
-			
-			const_node_handle& up() { 
-				if(current->parent != nullptr) current = current->parent; 
-				return *this;
-			}
-			
-			const_node_handle& left() { 
-				if(!current->leaf) { 
-					auto fork_ptr = static_cast<const Fork*>(current);
-					current = fork_ptr->left; 
-				}
-				return *this;
-			}
-			
-			const_node_handle& right() { 
-				if(!current->leaf) {
-					auto fork_ptr = static_cast<const Fork*>(current);
-					current = fork_ptr->right; 
-				}
-				return *this;
-			}
-			
-			const_node_handle& random();
-			const_node_handle& root() { while( !is_root() ) up(); return *this; }
-			
-			bin_type get_leaf_bin() const;
-
-			num_type get_fork_boundary() const;
-			dim_type get_fork_dimension() const;
-			bool get_fork_bit() const;
-			
-			bool is_leaf() const { return current->leaf; }
-			bool is_root() const { return current->parent == nullptr; }
-			bool is_ghost() const;
-			bool belongs_to(const Fern& owner) { return fern==&owner; }
-			bin_type get_max_bin() const { return fern->get_num_bins()-1; } //only called by random_analagous
-			
-		}; //class const_node_handle
-		
 		node_handle begin() { return node_handle(this); } 
-		const_node_handle cbegin() const { return const_node_handle(this); }
 		bool random_analagous(node_handle& one, node_handle& two); 
-		bool random_analagous(const_node_handle& one, node_handle& two); 
-		bool random_analagous(node_handle& one, const_node_handle& two); 
-		bool random_analagous(const_node_handle& one, const_node_handle& two); 
-		
+	
 		class dfs_iterator {
 		private:
 			node_handle node;
@@ -394,8 +345,6 @@ namespace clau {
 			bool is_null() const { return node == node_handle(); }
 			
 			node_handle get_handle() const { return node; }
-			const_node_handle get_const_handle() const 
-				{ return const_node_handle(node); }
 		};
 		
 		dfs_iterator sbegin() { return dfs_iterator(this); }

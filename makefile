@@ -1,10 +1,18 @@
 CC = g++
-CFLAGS = -std=c++11 -fPIC -g -I /usr/include/python2.7
+CFLAGS = -std=c++11 -g 
 
-libfern.so: Fern.h Fern.cpp fernpy.cpp
-	$(CC) $(CFLAGS) -c fernpy.cpp
-	$(CC) -g -shared -lpython2.7 -lboost_python -o fernpy.so fernpy.o
+demo/libfern.so : src/Fern.h src/Fern.cpp src/fernpy.cpp test/test_claude
+	cd src; \
+	$(CC) $(CFLAGS) -fPIC -I/usr/include/python2.7 -c fernpy.cpp
+	$(CC) -shared -g -lpython2.7 -lboost_python -o demo/libfern.so src/fernpy.o
 
+test/test_claude : src/Fern.h src/Fern.cpp test/test_claude.cpp
+	cd test; \
+	$(CC) $(CFLAGS) -I../src -lgtest -lpthread test_claude.cpp -o test_claude
+
+clean :
+	rm src/fernpy.o demo/libfern.so test/test_claude
+	
 #libClaude.so: $(OBJECTS)
 #	gcc -g -shared -Wl,-soname,libClaude.so.1 -o libClaude.so.1.0 $(OBJECTS); \
 #	ln -s libClaude.so.1.0 libClaude.so.1; \

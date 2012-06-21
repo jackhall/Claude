@@ -37,7 +37,7 @@ namespace {
 		
 		Region<1> region;
 		region.set_uniform(Interval());
-		EXPECT_EQ(region, fern.get_bounds());
+		EXPECT_EQ(region, fern.get_region());
 		
 		//verify default Fern structure
 		auto node = fern.begin();
@@ -57,7 +57,7 @@ namespace {
 		region(1).lower = 1.0;
 		region(1).upper = 2.0;
 		fern.set_bounds(region);
-		EXPECT_EQ(region, fern.get_bounds());
+		EXPECT_EQ(region, fern.get_region());
 		
 		//haven't written a way to set num_bins manually
 	}
@@ -74,7 +74,7 @@ namespace {
 		Fern<2> fern(region, num_bins);
 		
 		//verify Fern properties
-		EXPECT_EQ(region, fern.get_bounds());
+		EXPECT_EQ(region, fern.get_region());
 		EXPECT_EQ(num_bins, fern.get_num_bins());
 		
 		//verify Fern structure
@@ -293,7 +293,7 @@ namespace {
 		}
 		
 		bool CheckEqual(clau::Fern<2>& one, clau::Fern<2>& two) {
-			EXPECT_EQ(one.get_bounds(), two.get_bounds());
+			EXPECT_EQ(one.get_region(), two.get_region());
 			EXPECT_EQ(one.get_num_bins(), two.get_num_bins());
 		
 			auto iter = one.sbegin();
@@ -320,7 +320,7 @@ namespace {
 			point(2) = 3.234;
 			EXPECT_EQ(0, fern.query(point));
 			
-			point(2) = 3.238;
+			point(2)= 3.238;
 			EXPECT_EQ(1, fern.query(point));
 			
 			point(2) = 3.526;
