@@ -302,7 +302,7 @@ namespace clau {
 			bool is_leaf() const { return current->leaf; }
 			bool is_root() const { return current->parent == nullptr; }
 			bool is_ghost() const;
-			bool belongs_to(const Fern& owner) { return fern==&owner; }
+			bool belongs_to(const Fern& owner); 
 		}; //class node_handle
 		
 		node_handle begin() { return node_handle(this); } 

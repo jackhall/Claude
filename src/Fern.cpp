@@ -93,7 +93,7 @@ namespace clau {
 	void Fern<D>::crossover(const Fern& other) { 
 		auto target = begin(); 
 		auto source = const_cast<Fern&>(other).begin(); 
-		random_analagous(target, source); 
+		target.random_analagous(source); 
 		target.splice(source);
 	}
 	
@@ -497,6 +497,12 @@ namespace clau {
 		if( (parent_ptr->left == target_ptr) || (parent_ptr->right == target_ptr) ) 
 			return false;
 		else return true;
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::node_handle::belongs_to(const Fern& owner) { 
+		if( fern==nullptr ) return false;
+		return fern==&owner; 
 	}
 	
 	//=================== Fern::dfs_iterator methods ==================

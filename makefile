@@ -4,7 +4,7 @@ CFLAGS = -std=c++11 -g
 demo/libfern.so : src/Fern.h src/Fern.cpp src/fernpy.cpp test/test_claude
 	cd src; \
 	$(CC) $(CFLAGS) -fPIC -I/usr/include/python2.7 -c fernpy.cpp
-	$(CC) -shared -g -lpython2.7 -lboost_python -o demo/libfern.so src/fernpy.o
+	$(CC) -shared -g -Wl,-no-undefined -lpython2.7 -lboost_python -o demo/fernpy.so src/fernpy.o
 
 test/test_claude : src/Fern.h src/Fern.cpp test/test_claude.cpp
 	cd test; \
