@@ -1,11 +1,10 @@
-Claude contains the Fern algorithm for adative number discretization. So far, I've written 1D discretization with binning. It's a little kludgy:
+Claude contains the Fern algorithm for adative number discretization. I've written nD discretization with nonconsecutive binning. 
 
--Node interface is full of virtual methods that will be expensive in the long run. Since there is no need to extend with more implementations of Node, it's better to do static_casting and directly access methods. The Node interface is still necessary for traversal, but so many methods are specific to either forks or leaves that accessing them through the interface doesn't make sense. Also, since Fork and Leaf are only ever used/managed by Fern, casting mistakes are not as much as an issue. With this architecture, Node would need to keep a boolean to identify itself as a Leaf or Fork without a virtual function call. To ensure that Nodes aren't misused, it may be prudent to define all Nodes inside the scope of Fern. On the other hand, that code might be difficult to read. 
+I compiled this software with gcc 4.7, gtest 1.5 and boost.python 1.48. The C++ end of things is a header-only library. Compilation is required to test the C++ code and to expose the library to python. The compile flags I used indicate python 2.7, but there's no reason you can't change this to python 3.x. To build, simply type "make" in the Claude directory. To test, type "./test_claude" in the Claude/demo directory. To import to python, type "import fernpy" in the Claude/demo directory, or find some other way of putting fernpy.so where python can find it. 
 
--Future versions should have templating for ND discretization. Only the Fork class needs to be templated, so any python interface for the Fern class would be unchanged. I would probably need to write a specialization for the 1D case, because storing and mutating the dimension of each Fork is unnecessary. 
+Claude is free and licensed under the GNU-GPLv3. 
 
--Random-number generators are currently instantiated on the stack for temporary use. This could be making the program too deterministic, it could require extra computation to initialize repeatedly, or both. Random-number generation should be done either in at the Fern level or (preferably) as static methods/members for each class. This is the least deterministic and the easiest solution to implement. The only drawback is that those static methods would need muticies if I add multithreading later. 
+Issues:
 
 -Bins aren't consecutive right now, and I may want to change that to make a Fern look more like a traditaional number system. But bin order only really has meaning in the 1D case, since the proper ordering of bins for ND discretization may be very nonlinear. Also, enforcing the order of bins during crossover would be pretty much impossible. 
 
-Claude is free and licensed under the GNU-GPLv3. 
