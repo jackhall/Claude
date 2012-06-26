@@ -8,20 +8,26 @@ import random as rand
 rand.seed(3) #call with no arguments for true randomness
 
 ##### ode ######
+thrust = 1;
+J = 100
 class OptimalController:
 	def query(self, point): 
 		"""mimics fern.query to give optimal control of the satellite"""
 		theta, h = point[0], point[1]
-		#if pass: #<----------
-		#	mode = 0
-		#elif pass: #<----------
-		#	mode = 1
-		#else pass: #<----------
-		#	mode = 2
-		mode = 1
+		path = -0.5*thrust*h*abs(h)/J
+		if theta > path: 
+			mode = 0
+		elif theta < path: 
+			mode = 2
+		else: 
+			if h > 0:
+				mode = 0
+			elif h < 0:
+				mode = 2
+			else:
+				mode = 1
 		return mode
 		
-thrust = 1;
 def dh(theta, h, control=None):
 	"""computes the derivative of angular momentum (torque thrust)"""
 	if control is None:
@@ -38,7 +44,6 @@ def dh(theta, h, control=None):
 		force = thrust		
 	return force
 
-J = 100
 def dtheta(theta, h):
 	"""computes the angular velocity"""
 	return h/J
@@ -93,11 +98,11 @@ def evolve():
 
 def plot_phase(state0 = None, control=None):
 	"""generates a phase portrait and phase trajectory from random initial conditions"""
-	time = np.linspace(0, 1, 100)
+	time = np.linspace(0, 100, 100)
 	
 	if state0 is None:
 		theta0 = rand.random()*2*pi - pi #between -pi and pi rad
-		h0 = rand.random()*J*2 - 0.5 	 #between -1 and 1 rad/s
+		h0 = rand.random()*2 - 0.5 	 #between -1 and 1 rad/s
 		state0 = [theta0, h0]
 	
 	if control is None:
@@ -110,8 +115,9 @@ def plot_phase(state0 = None, control=None):
 	#system trajectory
 	plot.figure() #not plotting
 	plot.plot(theta, h, color='green')
+	plot.plot(-0.5*thrust*h*abs(h)/J, h, color='blue')
 	
-	thetamax, hmax = max(theta), max(h)
+	thetamax, hmax = max(abs(theta)), max(abs(h))
 	theta, h = np.meshgrid(np.linspace(-thetamax, thetamax, 10), np.linspace(-hmax, hmax, 10))
 	Dtheta, Dh = np.array(theta), np.array(h)
 	for i in range(theta.shape[0]):
@@ -120,4 +126,8 @@ def plot_phase(state0 = None, control=None):
 			Dh[i,j] = dh(float(theta[i,j]), float(h[i,j]))
 
 	plot.quiver(theta, h, Dtheta, Dh) #phase portrait (vector field)
+	h = np.linspace(-hmax, hmax, 20)
+	plot.plot(-0.5*thrust*h*abs(h)/J, h, color='blue') #optimal path mode
+	#plot.savefig("predprey-base.png", dpi=200)
+	plot.show()
 	
