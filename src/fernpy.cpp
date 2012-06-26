@@ -22,7 +22,7 @@
 #include "Fern.h"
 
 //set dimension of Fern here:
-#define DIM 1 
+#define DIM 2 
 
 //test function and class (diagnosis of C++ -> Python translation)
 /*
