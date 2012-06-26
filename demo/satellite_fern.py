@@ -7,6 +7,9 @@ import random as rand
 
 rand.seed(3) #call with no arguments for true randomness
 
+def random_seed(n):
+	rand.seed(n)
+
 ##### ode ######
 thrust = 1;
 J = 100
@@ -96,8 +99,9 @@ def evolve():
 	return population
 
 
+########## phase plotting ###########
 def plot_phase(state0 = None, control=None):
-	"""generates a phase portrait and phase trajectory from random initial conditions"""
+	"""generates a phase portrait and phase trajectory from initial conditions"""
 	time = np.linspace(0, 100, 100)
 	
 	if state0 is None:
@@ -117,6 +121,7 @@ def plot_phase(state0 = None, control=None):
 	plot.plot(theta, h, color='green')
 	plot.plot(-0.5*thrust*h*abs(h)/J, h, color='blue')
 	
+	#phase portrait (vector field)
 	thetamax, hmax = max(abs(theta)), max(abs(h))
 	theta, h = np.meshgrid(np.linspace(-thetamax, thetamax, 10), np.linspace(-hmax, hmax, 10))
 	Dtheta, Dh = np.array(theta), np.array(h)
@@ -125,9 +130,12 @@ def plot_phase(state0 = None, control=None):
 			Dtheta[i,j] = dtheta(float(theta[i,j]), float(h[i,j]))
 			Dh[i,j] = dh(float(theta[i,j]), float(h[i,j]))
 
-	plot.quiver(theta, h, Dtheta, Dh) #phase portrait (vector field)
+	plot.quiver(theta, h, Dtheta, Dh) 
+	
+	#optimal path mode
 	h = np.linspace(-hmax, hmax, 20)
-	plot.plot(-0.5*thrust*h*abs(h)/J, h, color='blue') #optimal path mode
-	#plot.savefig("predprey-base.png", dpi=200)
+	plot.plot(-0.5*thrust*h*abs(h)/J, h, color='blue')
+	
+	#plot.savefig("satellite-phase.png", dpi=200)
 	plot.show()
 	
