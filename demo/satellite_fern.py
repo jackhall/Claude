@@ -63,50 +63,94 @@ def f(state, t, control=None):
 def fitness(individual, state0):
 	"""procedure to compute evolutionary fitness from a simulation"""
 	#simulate
-	results = odeint(f, state0, time, individual[0])
+	results = odeint(f, state0, time, individual)
 	theta = results[:,0]
 	
 	#evaluate fitness function
-	individual[1] = 0.0
-	for i in theta: individual[1] += abs(i) #sum of absolute values of error
+	fitness = 0.0
+	for i in theta: fitness += abs(i) #sum of absolute values of error
+	return fitness
 	
-	
+def select(population_fitness):
+	"""randomly selects an element based on normalized fitnesses"""
+	choice = rand.random()
+	for index, fitness in enumerate(population_fitness):
+		if fitness > choice: 
+			return index
+		else:
+			choice -= fitness
+	return len(population_fitness)-1
+
+def median(sequence):
+	sequence.sort()
+	if len(sequence)%2 == 0:
+		mid_right = len(sequence)/2
+		return (seqeuence[mid_right] + sequence[mid_right-1]) / 2.0
+	else:
+		return sequence[ len(sequence)/2 ]    
+
 #################################
 ##### genetic algorithm #########
 #################################
+n = 20
+crossover_rate = .7
+mutation_rate = .1
 def evolve():
 	"""runs fern genetic algorithm and returns final population"""
 	#initialize ferns
 	r = fp.region()
 	r[0], r[1] = fp.interval(-pi, pi), fp.interval(-2.0*J, 2.0*J)
 
-	population = [(fp.fern(r, 2), 1.0) for i in range(20)] #list of tuple(fern, fitness)
+	population = [fp.fern(r, 2) for i in range(n)] #list of tuple(fern, fitness)
 	time = np.linspace(0, .1, 100)
-
-	for generation in range(20):
-		#evaluate ferns
-		for individual in population:
-			theta0 = rand.random()*2*pi - pi #between -pi and pi rad
-			h0 = rand.random()*J*2 - 0.5 	 #between -1 and 1 rad/s
-			state0 = [theta0, h0]
-			fitness(individual, state0)
 	
+	max_fitness = [0]*n
+	median_fitness = [0]*n
+
+	for generation in range(n):
+		#evaluate ferns
+		pop_fitness = np.array([0]*n)
+		theta0 = rand.random()*2*pi - pi #between -pi and pi rad
+		h0 = rand.random()*2 - 1 	 #between -1 and 1 rad/s
+		state0 = [theta0, h0]
+		for index, individual in enumerate(population):
+			pop_fitness[index] = fitness(individual, state0)
+		
+		#record and then normalize fitness
+		max_fitness[generation] = max(pop_fitness)
+		median_fitness[generation] = median(pop_fitness)
+		pop_fitness /= sum(pop_fitess)
+		
+		if generation == n-1: break #skip breeding on last step
+		
 		#select parents and breed new population
-
-
+		old_pop = population
+		for child_i in range(len(population)):
+			population[child_i] = old_pop[ select(pop_fitness) ]
+			if rand.random() < crossover_rate:
+				father_i = select(pop_fitness)
+				population[child_i].crossover( old_pop[select(pop_fitness)] ) 
+			if rand.random() < mutation_rate:
+				population[child_i].mutate()
+			
 	##### plots ########
+	plot_phase( population[pop_fitness.index( max(pop_fitness) )] ) #plot best solution
+	plot.figure()
+	plot.plot(range(n), max_fitness, color='green') #plot fitness progression
+	plot.plot(range(n), median_fitness, color='green')
+	plot.show()
 	
 	return population
 
 
-########## phase plotting ###########
-def plot_phase(state0 = None, control=None):
+########## phase plotting ########### not quite working yet
+def plot_phase(control=None, state0 = None):
 	"""generates a phase portrait and phase trajectory from initial conditions"""
-	time = np.linspace(0, 100, 100)
+	time = np.linspace(0, 20, 100)
 	
 	if state0 is None:
 		theta0 = rand.random()*2*pi - pi #between -pi and pi rad
-		h0 = rand.random()*2 - 0.5 	 #between -1 and 1 rad/s
+		h0 = rand.random()*2 - 1 	 #between -1 and 1 rad/s
 		state0 = [theta0, h0]
 	
 	if control is None:
@@ -117,9 +161,8 @@ def plot_phase(state0 = None, control=None):
 	theta, h = results[:,0], results[:,1]
 	
 	#system trajectory
-	plot.figure() #not plotting
+	plot.figure() 
 	plot.plot(theta, h, color='green')
-	plot.plot(-0.5*thrust*h*abs(h)/J, h, color='blue')
 	
 	#phase portrait (vector field)
 	thetamax, hmax = max(abs(theta)), max(abs(h))
