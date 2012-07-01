@@ -146,12 +146,13 @@ def evolve():
 ########## phase plotting ########### not quite working yet
 def plot_phase(control=None, state0 = None):
 	"""generates a phase portrait and phase trajectory from initial conditions"""
-	time = np.linspace(0, 20, 100)
+	time = np.linspace(0, 100)
 	
 	if state0 is None:
 		theta0 = rand.random()*2*pi - pi #between -pi and pi rad
 		h0 = rand.random()*2 - 1 	 #between -1 and 1 rad/s
 		state0 = [theta0, h0]
+	print "Initial: ", state0
 	
 	if control is None:
 		results = odeint(f, state0, time)
@@ -159,6 +160,8 @@ def plot_phase(control=None, state0 = None):
 		results = odeint(f, state0, time, control)
 		
 	theta, h = results[:,0], results[:,1]
+	statew = [theta[-1], h[-1]]
+	print "Final: ", statew
 	
 	#system trajectory
 	plot.figure() 
