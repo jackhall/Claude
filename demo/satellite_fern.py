@@ -222,6 +222,7 @@ def plot_phase(control=None, state0 = None):
 		theta0 = rand.random()*2*pi - pi #between -pi and pi rad
 		h0 = rand.random()*2 - 1 	 #between -1 and 1 rad/s
 		state0 = [theta0, h0]
+	print "Initial: ", state0
 	
 	if control is None:
 		control = OptimalController()
@@ -229,6 +230,8 @@ def plot_phase(control=None, state0 = None):
 	results, time = simulate(100, 10, control, state0)
 		
 	theta, h = results[:,0], results[:,1]
+	statew = [theta[-1], h[-1]]
+	print "Final: ", statew
 	
 	#system trajectory
 	plot.figure() 
