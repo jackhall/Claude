@@ -2,6 +2,7 @@ import fernpy as fp
 from math import * #for pi
 import numpy as np 
 import matplotlib.pyplot as plot
+import scipy.integrate as spint
 from scipy.integrate import odeint
 import random as rand
 
@@ -40,12 +41,12 @@ def dh(theta, h, control=None):
 	p[0], p[1] = theta, h 
 	mode = control.query(p) 
 	if mode is 0:
-		force = -thrust
+		torque = -thrust
 	elif mode is 1:
-		force = 0
+		torque = 0
 	elif mode is 2:
-		force = thrust		
-	return force
+		torque = thrust		
+	return torque
 
 def dtheta(theta, h):
 	"""computes the angular velocity"""
@@ -58,18 +59,87 @@ def f(state, t, control=None):
 	Dh = dh(theta, h, control)
 	return Dtheta, Dh
 
+#event detection by stepping through scipy.ode (object-oriented wrapper of lsoda)
+def fblank(t, state, torque):
+	"""ode representing satellite - needs 'torque' to be set"""
+	theta, h = state
+	Dtheta = dtheta(theta, h)
+	Dh = torque
+	return Dtheta, Dh
+
+def simulate(t_final, dt, control=None, state0=None):
+	"""simulates a satellite (with event detection)"""
+	if control is None:
+		control = OptimalController()
+		
+	if state0 is None:
+		theta0 = rand.random()*2*pi - pi #between -pi and pi rad
+		h0 = rand.random()*2 - 1 	 #between -1 and 1 rad/s
+		state0 = [theta0, h0]
+	
+	y_out, t_out = [], []
+	solver = spint.ode(fblank).set_integrator('vode', method='adams', with_jacobian=False) 
+	solver.set_initial_value(state0, 0.0) #thinks state0 has only one number in it?
+	p = fp.point()
+	while solver.t < t_final:
+		
+		#select a control mode by setting torque
+		p[0], p[1] = solver.y
+		mode = control.query(p) 
+		if mode is 0:
+			solver.set_f_params(-thrust)
+		elif mode is 1:
+			solver.set_f_params(0.0)
+		elif mode is 2:
+			solver.set_f_params(thrust)
+
+		#run forward as far as possible
+		stop = False
+		while solver.successful() and (not stop) and solver.t < t_final:
+			y_out.append(solver.y)
+			t_out.append(solver.t)
+			solver.integrate(solver.t + dt) #something is wrong with parameter passing...
+			p[0], p[1] = solver.y
+			stop = control.query(p) != mode
+		
+		#check if simulation is done
+		if solver.t >= t_final or not solver.successful():
+			y_out.append(solver.y)
+			t_out.append(solver.t)
+			break
+		
+		#go back one step, cut step size in half until switch time is known
+		solver.set_initial_value(y_out[-1], t_out[-1])
+		step = dt/2
+		while step > 0.001:
+			y_current, t_current = solver.y, solver.t
+			solver.integrate(solver.t + step)
+			p[0], p[1] = solver.y
+			if control.query(p) != mode:
+				solver.set_initial_value(y_current, t_current)
+			step /= 2
+	
+	return y_out, t_out
+		
+	
+#r = ode(f, jac).set_integrator('zvode', method='bdf', with_jacobian=True)
+#r.set_initial_value(y0, t0).set_f_params(2.0).set_jac_params(2.0)
+#t1 = 10
+#dt = 1
+#while r.successful() and r.t < t1:
+#	r.integrate(r.t+dt)
+#	print r.t, r.y
+	
 
 ###### fitness evaluation #######
 def fitness(individual, state0):
 	"""procedure to compute evolutionary fitness from a simulation"""
 	#simulate
-	results = odeint(f, state0, time, individual)
+	results, time = simulate(100, 10, individual, state0)
 	theta = results[:,0]
 	
 	#evaluate fitness function
-	fitness = 0.0
-	for i in theta: fitness += abs(i) #sum of absolute values of error
-	return fitness
+	return spint.trapz(theta, time)
 	
 def select(population_fitness):
 	"""randomly selects an element based on normalized fitnesses"""
@@ -102,7 +172,7 @@ def evolve():
 	r[0], r[1] = fp.interval(-pi, pi), fp.interval(-2.0*J, 2.0*J)
 
 	population = [fp.fern(r, 2) for i in range(n)] #list of tuple(fern, fitness)
-	time = np.linspace(0, .1, 100)
+	#time = np.linspace(0, .1, 100) not needed with simulate()
 	
 	max_fitness = [0]*n
 	median_fitness = [0]*n
@@ -146,7 +216,7 @@ def evolve():
 ########## phase plotting ########### not quite working yet
 def plot_phase(control=None, state0 = None):
 	"""generates a phase portrait and phase trajectory from initial conditions"""
-	time = np.linspace(0, 20, 100)
+	#time = np.linspace(0, 20, 100) not needed for simulate()
 	
 	if state0 is None:
 		theta0 = rand.random()*2*pi - pi #between -pi and pi rad
@@ -154,9 +224,9 @@ def plot_phase(control=None, state0 = None):
 		state0 = [theta0, h0]
 	
 	if control is None:
-		results = odeint(f, state0, time)
-	else:
-		results = odeint(f, state0, time, control)
+		control = OptimalController()
+
+	results, time = simulate(100, 10, control, state0)
 		
 	theta, h = results[:,0], results[:,1]
 	
