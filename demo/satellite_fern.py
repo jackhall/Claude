@@ -2,6 +2,7 @@ import fernpy as fp
 from math import * #for pi
 import numpy as np 
 import matplotlib.pyplot as plot
+import scipy as sp #for argmax
 import scipy.integrate as spint
 from scipy.integrate import odeint
 import random as rand
@@ -10,6 +11,11 @@ rand.seed(3) #call with no arguments for true randomness
 
 def random_seed(n):
 	rand.seed(n)
+
+def random_state():
+	theta = rand.random()*2*pi - pi #between -pi and pi rad
+	h = rand.random()*2 - 1 	#between -1 and 1 rad/s
+	return [theta, h]
 
 ##### ode ######
 thrust = 1;
@@ -24,7 +30,7 @@ class OptimalController:
 		elif theta < path: 
 			mode = 2
 		else: 
-			if h > 0:
+			if h > 0: 
 				mode = 0
 			elif h < 0:
 				mode = 2
@@ -52,12 +58,12 @@ def dtheta(theta, h):
 	"""computes the angular velocity"""
 	return h/J
 
-def f(state, t, control=None):
-	"""ode representing a satellite - to be solved numerically"""
-	theta, h = state
-	Dtheta = dtheta(theta, h)
-	Dh = dh(theta, h, control)
-	return Dtheta, Dh
+#def f(state, t, control=None):
+#	"""ode representing a satellite - to be solved numerically"""
+#	theta, h = state
+#	Dtheta = dtheta(theta, h)
+#	Dh = dh(theta, h, control)
+#	return Dtheta, Dh
 
 #event detection by stepping through scipy.ode (object-oriented wrapper of lsoda)
 def fblank(t, state, torque):
@@ -65,7 +71,7 @@ def fblank(t, state, torque):
 	theta, h = state
 	Dtheta = dtheta(theta, h)
 	Dh = torque
-	return Dtheta, Dh
+	return [Dtheta, Dh] #f2py weirdness requires a list instead of a tuple
 
 def simulate(t_final, dt, control=None, state0=None):
 	"""simulates a satellite (with event detection)"""
@@ -73,15 +79,15 @@ def simulate(t_final, dt, control=None, state0=None):
 		control = OptimalController()
 		
 	if state0 is None:
-		theta0 = rand.random()*2*pi - pi #between -pi and pi rad
-		h0 = rand.random()*2 - 1 	 #between -1 and 1 rad/s
-		state0 = [theta0, h0]
+		state0 = random_state()
+	
+	state_tolerance = .01
 	
 	y_out, t_out = [], []
 	solver = spint.ode(fblank).set_integrator('vode', method='adams', with_jacobian=False) 
 	solver.set_initial_value(state0, 0.0) #thinks state0 has only one number in it?
 	p = fp.point()
-	while solver.t < t_final:
+	while solver.t < t_final and solver.successful():
 		
 		#select a control mode by setting torque
 		p[0], p[1] = solver.y
@@ -93,14 +99,20 @@ def simulate(t_final, dt, control=None, state0=None):
 		elif mode is 2:
 			solver.set_f_params(thrust)
 
+		if sum(abs(solver.y)) < state_tolerance: #dead zone around (0,0)
+			solver.set_f_params(0.0)
+
 		#run forward as far as possible
-		stop = False
-		while solver.successful() and (not stop) and solver.t < t_final:
+		while solver.successful() and solver.t < t_final:
 			y_out.append(solver.y)
 			t_out.append(solver.t)
-			solver.integrate(solver.t + dt) #something is wrong with parameter passing...
+			solver.integrate(solver.t + dt) 
 			p[0], p[1] = solver.y
-			stop = control.query(p) != mode
+			if sum(abs(solver.y)) < state_tolerance:
+				solver.set_f_params(0.0)
+			elif control.query(p) != mode:
+				#print p, ", stopping at t = ", solver.t
+				break
 		
 		#check if simulation is done
 		if solver.t >= t_final or not solver.successful():
@@ -110,25 +122,18 @@ def simulate(t_final, dt, control=None, state0=None):
 		
 		#go back one step, cut step size in half until switch time is known
 		solver.set_initial_value(y_out[-1], t_out[-1])
-		step = dt/2
-		while step > 0.001:
+		step = dt / 2.0
+		while True:
 			y_current, t_current = solver.y, solver.t
 			solver.integrate(solver.t + step)
 			p[0], p[1] = solver.y
 			if control.query(p) != mode:
+				if step < 0.001:
+					break
 				solver.set_initial_value(y_current, t_current)
-			step /= 2
-	
-	return y_out, t_out
-		
-	
-#r = ode(f, jac).set_integrator('zvode', method='bdf', with_jacobian=True)
-#r.set_initial_value(y0, t0).set_f_params(2.0).set_jac_params(2.0)
-#t1 = 10
-#dt = 1
-#while r.successful() and r.t < t1:
-#	r.integrate(r.t+dt)
-#	print r.t, r.y
+			step /= 2.0
+
+	return np.array(y_out), t_out
 	
 
 ###### fitness evaluation #######
@@ -155,23 +160,20 @@ def median(sequence):
 	sequence.sort()
 	if len(sequence)%2 == 0:
 		mid_right = len(sequence)/2
-		return (seqeuence[mid_right] + sequence[mid_right-1]) / 2.0
+		return (sequence[mid_right] + sequence[mid_right-1]) / 2.0
 	else:
 		return sequence[ len(sequence)/2 ]    
 
 #################################
 ##### genetic algorithm #########
 #################################
-n = 20
-crossover_rate = .7
-mutation_rate = .1
-def evolve():
+def evolve(n=20, pop=20, mutation_rate=.1, crossover_rate=.7):
 	"""runs fern genetic algorithm and returns final population"""
 	#initialize ferns
 	r = fp.region()
 	r[0], r[1] = fp.interval(-pi, pi), fp.interval(-2.0*J, 2.0*J)
 
-	population = [fp.fern(r, 2) for i in range(n)] #list of tuple(fern, fitness)
+	population = [fp.fern(r, 2) for i in range(pop)] #list of tuple(fern, fitness)
 	#time = np.linspace(0, .1, 100) not needed with simulate()
 	
 	max_fitness = [0]*n
@@ -179,24 +181,23 @@ def evolve():
 
 	for generation in range(n):
 		#evaluate ferns
-		pop_fitness = np.array([0]*n)
-		theta0 = rand.random()*2*pi - pi #between -pi and pi rad
-		h0 = rand.random()*2 - 1 	 #between -1 and 1 rad/s
-		state0 = [theta0, h0]
+		pop_fitness = np.array([0]*pop)
+		state0 = random_state()
 		for index, individual in enumerate(population):
 			pop_fitness[index] = fitness(individual, state0)
 		
 		#record and then normalize fitness
-		max_fitness[generation] = max(pop_fitness)
+		max_fitness_index = sp.argmax(pop_fitness)
+		max_fitness[generation] = pop_fitness[max_fitness_index]
 		median_fitness[generation] = median(pop_fitness)
-		pop_fitness /= sum(pop_fitess)
+		pop_fitness /= sum(pop_fitness)
 		
 		if generation == n-1: break #skip breeding on last step
 		
 		#select parents and breed new population
-		old_pop = population
+		old_pop = population #not making copies?
 		for child_i in range(len(population)):
-			population[child_i] = old_pop[ select(pop_fitness) ]
+			population[child_i] = old_pop[ select(pop_fitness) ] #not making copy?
 			if rand.random() < crossover_rate:
 				father_i = select(pop_fitness)
 				population[child_i].crossover( old_pop[select(pop_fitness)] ) 
@@ -204,34 +205,31 @@ def evolve():
 				population[child_i].mutate()
 			
 	##### plots ########
-	plot_phase( population[pop_fitness.index( max(pop_fitness) )] ) #plot best solution
+	plot_phase( population[ max_fitness_index ] ) #plot best solution
 	plot.figure()
 	plot.plot(range(n), max_fitness, color='green') #plot fitness progression
-	plot.plot(range(n), median_fitness, color='green')
+	plot.plot(range(n), median_fitness, color='blue')
 	plot.show()
 	
 	return population
 
 
-########## phase plotting ########### not quite working yet
+########## phase plotting ########### 
 def plot_phase(control=None, state0 = None):
 	"""generates a phase portrait and phase trajectory from initial conditions"""
 	#time = np.linspace(0, 20, 100) not needed for simulate()
 	
 	if state0 is None:
-		theta0 = rand.random()*2*pi - pi #between -pi and pi rad
-		h0 = rand.random()*2 - 1 	 #between -1 and 1 rad/s
-		state0 = [theta0, h0]
-	print "Initial: ", state0
+		state0 = random_state()
+	#print "Initial: ", state0
 	
 	if control is None:
 		control = OptimalController()
 
-	results, time = simulate(100, 10, control, state0)
-		
+	results, time = simulate(50, 5, control, state0)
 	theta, h = results[:,0], results[:,1]
-	statew = [theta[-1], h[-1]]
-	print "Final: ", statew
+	#statew = [theta[-1], h[-1]]
+	#print "Final: ", statew
 	
 	#system trajectory
 	plot.figure() 
