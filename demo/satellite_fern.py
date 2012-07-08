@@ -4,22 +4,24 @@ import numpy as np
 import matplotlib.pyplot as plot
 import scipy as sp #for argmax
 import scipy.integrate as spint
-from scipy.integrate import odeint
+#from scipy.integrate import odeint
 import random as rand
+import copy
 
 rand.seed(3) #call with no arguments for true randomness
 
 def random_seed(n):
 	rand.seed(n)
 
-def random_state():
-	theta = rand.random()*2*pi - pi #between -pi and pi rad
-	h = rand.random()*2 - 1 	#between -1 and 1 rad/s
-	return [theta, h]
-
 ##### ode ######
 thrust = 1;
 J = 100
+
+def random_state():
+	theta = rand.random()*2*pi - pi #between -pi and pi rad
+	h = (rand.random()*2 - 1)*30 	#between -30 and 30 rad/s
+	return [theta, h]
+	
 class OptimalController:
 	def query(self, point): 
 		"""mimics fern.query to give optimal control of the satellite"""
@@ -140,11 +142,12 @@ def simulate(t_final, dt, control=None, state0=None):
 def fitness(individual, state0):
 	"""procedure to compute evolutionary fitness from a simulation"""
 	#simulate
-	results, time = simulate(100, 10, individual, state0)
-	theta = results[:,0]
+	total_error = 0.0;
+	for i in range(3): #3 simulations per evaluation
+		results, time = simulate(100, 10, individual, state0)
+		total_error += spint.trapz(abs(results[:,0]), time)
 	
-	#evaluate fitness function
-	return spint.trapz(theta, time)
+	return 3000.0/total_error 
 	
 def select(population_fitness):
 	"""randomly selects an element based on normalized fitnesses"""
@@ -167,7 +170,7 @@ def median(sequence):
 #################################
 ##### genetic algorithm #########
 #################################
-def evolve(n=20, pop=20, mutation_rate=.1, crossover_rate=.7):
+def evolve(n=200, pop=20, mutation_rate=.1, crossover_rate=.7):
 	"""runs fern genetic algorithm and returns final population"""
 	#initialize ferns
 	r = fp.region()
@@ -195,14 +198,15 @@ def evolve(n=20, pop=20, mutation_rate=.1, crossover_rate=.7):
 		if generation == n-1: break #skip breeding on last step
 		
 		#select parents and breed new population
-		old_pop = population #not making copies?
-		for child_i in range(len(population)):
-			population[child_i] = old_pop[ select(pop_fitness) ] #not making copy?
+		new_population = []
+		for i in range(pop):
+			new_population.append(fp.fern( population[select(pop_fitness)] ))
 			if rand.random() < crossover_rate:
-				father_i = select(pop_fitness)
-				population[child_i].crossover( old_pop[select(pop_fitness)] ) 
+				new_population[-1].crossover( population[select(pop_fitness)] ) 
 			if rand.random() < mutation_rate:
-				population[child_i].mutate()
+				new_population[-1].mutate()
+		
+		population = new_population
 			
 	##### plots ########
 	plot_phase( population[ max_fitness_index ] ) #plot best solution

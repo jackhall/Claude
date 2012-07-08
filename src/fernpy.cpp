@@ -20,16 +20,15 @@
 
 #include <boost/python.hpp>
 #include "Fern.h"
-namespace bp = boost::python;
 
 //set dimension of Fern here:
 #define DIM 2 
-
+/*
 #define PYTHON_ERROR(TYPE, REASON) \
 { \
     PyErr_SetString(TYPE, REASON); \
     throw bp::error_already_set(); \
-}
+} */
 
 //test function and class (diagnosis of C++ -> Python translation)
 /*
@@ -62,18 +61,19 @@ struct std_item { //helper class for Point and Region
 		else IndexError();
     	}
 };
-
+/*
 template<class T>
 inline PyObject * managingPyObject(T *p) {
-	return typename bp::manage_new_object::apply<T *>::type()(p);
+	return typename boost::python::manage_new_object::apply<T *>::type()(p);
 }
 
 template<class Copyable>
-bp::object std_copy(bp::object copyable) {
-	Copyable *newCopyable(new Copyable(bp::extract<const Copyable&>(copyable)));
-	bp::object result(bp::detail::new_reference(managingPyObject(newCopyable)));
+boost::python::object std_copy(boost::python::object copyable) {
+	using namespace boost::python;
+	Copyable *newCopyable = new Copyable(extract<const Copyable&>(copyable));
+	object result(detail::new_reference(managingPyObject(newCopyable)));
 
-	bp::extract<bp::dict>(result.attr("__dict__"))().update(copyable.attr("__dict__"));
+	extract<dict>(result.attr("__dict__"))().update(copyable.attr("__dict__"));
 
 	return result;
 }
@@ -114,7 +114,7 @@ BOOST_PYTHON_MODULE(fernpy) {
 	class_<Interval>("interval")
 		.def( init<num_type, num_type>() )
 		.def( init<const Interval&>() )
-		.def("__copy__", &std_copy<Interval>)
+		//.def("__copy__", &std_copy<Interval>)
 		//.def("__deepcopy", &std_deepcopy<Interval>)
 		.def_readwrite("lower", &Interval::lower)
 		.def_readwrite("upper", &Interval::upper)
@@ -126,7 +126,7 @@ BOOST_PYTHON_MODULE(fernpy) {
 	
 	class_< Region<DIM> >("region")
 		.def( init<const Region<DIM>&>() )
-		.def("__copy__", &std_copy< Region<DIM> >)
+		//.def("__copy__", &std_copy< Region<DIM> >)
 		//.def("__deepcopy__", &std_deepcopy< Region<DIM> >)
 		.def("set_uniform", &Region<DIM>::set_uniform)
 		.def( self == self )
@@ -137,7 +137,7 @@ BOOST_PYTHON_MODULE(fernpy) {
 	
 	class_< Point<DIM> >("point")
 		.def( init<const Point<DIM>&>() )
-		.def("__copy__", &std_copy< Point<DIM> >)
+		//.def("__copy__", &std_copy< Point<DIM> >)
 		//.def("__deepcopy__", &std_deepcopy< Point<DIM> >)
 		.def( self == self )
 		.def( self != self )
@@ -148,7 +148,7 @@ BOOST_PYTHON_MODULE(fernpy) {
 	class_< Fern<DIM> >("fern", init<bin_type>())
 		.def( init<Region<DIM>, bin_type>() )
 		.def( init<const Fern<DIM>&>() )
-		.def("__copy__", &std_copy< Fern<DIM> >)
+		//.def("__copy__", &std_copy< Fern<DIM> >)
 		//.def("__deepcopy__", &std_deepcopy< Fern<DIM> >)
 		.def("set_bounds", &Fern<DIM>::set_bounds)
 		.def("get_bounds", &Fern<DIM>::get_bounds)
@@ -162,7 +162,7 @@ BOOST_PYTHON_MODULE(fernpy) {
 	
 	class_< Fern<DIM>::Division >("division")
 		.def( init<const Fern<DIM>::Division&>() )
-		.def("__copy__", &std_copy< Fern<DIM>::Division >)
+		//.def("__copy__", &std_copy< Fern<DIM>::Division >)
 		//.def("__deepcopy__", &std_deepcopy< Fern<DIM>::Division >)
 		.def( init<bool, dim_type>() )
 		.def_readwrite("bit", &Fern<DIM>::Division::bit)
@@ -170,7 +170,7 @@ BOOST_PYTHON_MODULE(fernpy) {
 	
 	class_< Fern<DIM>::node_handle >("node_handle") 
 		.def( init<const Fern<DIM>::node_handle&>() )
-		.def("__copy__", &std_copy< Fern<DIM>::node_handle >)
+		//.def("__copy__", &std_copy< Fern<DIM>::node_handle >)
 		//.def("__deepcopy__", &std_deepcopy< Fern<DIM>::node_handle >)
 		.def( self == self )
 		.def( self != self )
