@@ -6,7 +6,8 @@ import scipy as sp #for argmax
 import scipy.integrate as spint
 #from scipy.integrate import odeint
 import random as rand
-import copy
+import sys #for printing
+import time #for time limit on simulations
 
 rand.seed(3) #call with no arguments for true randomness
 
@@ -19,7 +20,7 @@ J = 100
 
 def random_state():
 	theta = rand.random()*2*pi - pi #between -pi and pi rad
-	h = (rand.random()*2 - 1)*30 	#between -30 and 30 rad/s
+	h = (rand.random()*2 - 1)*1	
 	return [theta, h]
 	
 class OptimalController:
@@ -89,6 +90,7 @@ def simulate(t_final, dt, control=None, state0=None):
 	solver = spint.ode(fblank).set_integrator('vode', method='adams', with_jacobian=False) 
 	solver.set_initial_value(state0, 0.0) #thinks state0 has only one number in it?
 	p = fp.point()
+	max_time = time.clock() + 0.5
 	while solver.t < t_final and solver.successful():
 		
 		#select a control mode by setting torque
@@ -117,7 +119,7 @@ def simulate(t_final, dt, control=None, state0=None):
 				break
 		
 		#check if simulation is done
-		if solver.t >= t_final or not solver.successful():
+		if solver.t >= t_final or time.clock() > max_time or not solver.successful():
 			y_out.append(solver.y)
 			t_out.append(solver.t)
 			break
@@ -134,7 +136,12 @@ def simulate(t_final, dt, control=None, state0=None):
 					break
 				solver.set_initial_value(y_current, t_current)
 			step /= 2.0
-
+	
+	#if solver hit the time limit
+	if t_out[-1] < t_final: 
+		y_out.append(solver.y*1000)
+		t_out.append(t_final)
+	
 	return np.array(y_out), t_out
 	
 
@@ -143,10 +150,9 @@ def fitness(individual, state0):
 	"""procedure to compute evolutionary fitness from a simulation"""
 	#simulate
 	total_error = 0.0;
-	for i in range(3): #3 simulations per evaluation
-		results, time = simulate(100, 10, individual, state0)
+	for i in state0: 
+		results, time = simulate(100, 10, individual, i)
 		total_error += spint.trapz(abs(results[:,0]), time)
-	
 	return 3000.0/total_error 
 	
 def select(population_fitness):
@@ -176,16 +182,16 @@ def evolve(n=200, pop=20, mutation_rate=.1, crossover_rate=.7):
 	r = fp.region()
 	r[0], r[1] = fp.interval(-pi, pi), fp.interval(-2.0*J, 2.0*J)
 
-	population = [fp.fern(r, 2) for i in range(pop)] #list of tuple(fern, fitness)
+	population = [fp.fern(r, 3) for i in range(pop)] #list of tuple(fern, fitness)
 	#time = np.linspace(0, .1, 100) not needed with simulate()
 	
 	max_fitness = [0]*n
 	median_fitness = [0]*n
-
+	
 	for generation in range(n):
 		#evaluate ferns
-		pop_fitness = np.array([0]*pop)
-		state0 = random_state()
+		pop_fitness = np.array([0.0]*pop)
+		state0 = [random_state() for i in range(3)] #3 simulations per evaluation
 		for index, individual in enumerate(population):
 			pop_fitness[index] = fitness(individual, state0)
 		
@@ -195,7 +201,12 @@ def evolve(n=200, pop=20, mutation_rate=.1, crossover_rate=.7):
 		median_fitness[generation] = median(pop_fitness)
 		pop_fitness /= sum(pop_fitness)
 		
-		if generation == n-1: break #skip breeding on last step
+		sys.stdout.write("\rgen %i" % generation)
+		sys.stdout.flush()
+		
+		if generation == n-1: 
+			sys.stdout.write("\n")
+			break #skip breeding on last step
 		
 		#select parents and breed new population
 		new_population = []

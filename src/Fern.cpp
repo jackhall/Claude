@@ -82,7 +82,7 @@ namespace clau {
 	void Fern<D>::mutate() { 
 		auto locus = begin();
 		locus.random();
-		std::bernoulli_distribution  mutation_type_chance(0.5);
+		std::bernoulli_distribution  mutation_type_chance(0.25);
 
 		if( mutation_type_chance(generator) ) 
 			if( !locus.mutate_structure() ) locus.mutate_value();
@@ -103,7 +103,7 @@ namespace clau {
 		using namespace std;
 		
 		out << "Interval:" << endl;
-		for(int i=T; i>0; i--)
+		for(int i=1; i<=T; ++i)
 			out << "\t[" << fern.root_region(i).lower << ", " << fern.root_region(i).upper << "]" << endl; 
 		out << "Number of bins: " << fern.max_bin+1 << endl;
 		out << "Fern structure:" << endl;
