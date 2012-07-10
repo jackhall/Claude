@@ -7,9 +7,9 @@ import scipy.integrate as spint
 #from scipy.integrate import odeint
 import random as rand
 import sys #for printing
-import time #for time limit on simulations
+import time #for time limit on simulations and pausing
 
-rand.seed(3) #call with no arguments for true randomness
+#rand.seed(3) #call with no arguments for true randomness
 
 def random_seed(n):
 	rand.seed(n)
@@ -18,11 +18,21 @@ def random_seed(n):
 thrust = 1;
 J = 100
 
+def roll(y):
+	"""takes care of angle roll-over"""
+	theta = y[0]
+	if abs(theta) > pi:
+		theta %= 2*pi
+		if theta > pi:
+			theta -= 2*pi
+	return [theta, y[1]]
+
 def random_state():
+	"""generate random initial condition"""
 	theta = rand.random()*2*pi - pi #between -pi and pi rad
-	h = (rand.random()*2 - 1)*1	
+	h = (rand.random()*2 - 1)*5	
 	return [theta, h]
-	
+
 class OptimalController:
 	def query(self, point): 
 		"""mimics fern.query to give optimal control of the satellite"""
@@ -47,7 +57,7 @@ def dh(theta, h, control=None):
 		control = OptimalController()
 	
 	p = fp.point()
-	p[0], p[1] = theta, h 
+	p[0], p[1] = roll([theta, h]) 
 	mode = control.query(p) 
 	if mode is 0:
 		torque = -thrust
@@ -110,7 +120,9 @@ def simulate(t_final, dt, control=None, state0=None):
 		while solver.successful() and solver.t < t_final:
 			y_out.append(solver.y)
 			t_out.append(solver.t)
-			solver.integrate(solver.t + dt) 
+			solver.integrate(solver.t + dt)
+			if abs(solver.y[0]) > pi:
+				solver.set_initial_value(roll(solver.y), solver.t)
 			p[0], p[1] = solver.y
 			if sum(abs(solver.y)) < state_tolerance:
 				solver.set_f_params(0.0)
@@ -126,16 +138,18 @@ def simulate(t_final, dt, control=None, state0=None):
 		
 		#go back one step, cut step size in half until switch time is known
 		solver.set_initial_value(y_out[-1], t_out[-1])
-		step = dt / 2.0
+		bisect_step = dt / 2.0
 		while True:
 			y_current, t_current = solver.y, solver.t
-			solver.integrate(solver.t + step)
+			solver.integrate(solver.t + bisect_step)
+			if abs(solver.y[0]) > pi:
+				solver.set_initial_value(roll(solver.y), solver.t)
 			p[0], p[1] = solver.y
 			if control.query(p) != mode:
-				if step < 0.001:
+				if bisect_step < 0.001:
 					break
 				solver.set_initial_value(y_current, t_current)
-			step /= 2.0
+			bisect_step /= 2.0
 	
 	#if solver hit the time limit
 	if t_out[-1] < t_final: 
@@ -153,6 +167,7 @@ def fitness(individual, state0):
 	for i in state0: 
 		results, time = simulate(100, 10, individual, i)
 		total_error += spint.trapz(abs(results[:,0]), time)
+		#total_error += abs(results[-1,0])
 	return 3000.0/total_error 
 	
 def select(population_fitness):
@@ -176,6 +191,16 @@ def median(sequence):
 #################################
 ##### genetic algorithm #########
 #################################
+#tweak options:
+#	initial fern configuration
+#	initial momentum for simulations
+#	allow any merge (destruction of subtrees)
+#	choose another fitness function
+#	control fitness range with power law
+#	mutation probabilities (leaf v fork, structure v value, dimension v bit)
+#	mutation and crossover rates
+#	deterministic v stochastic evaluation
+#do I need to write a plotter for ferns?
 def evolve(n=200, pop=20, mutation_rate=.1, crossover_rate=.7):
 	"""runs fern genetic algorithm and returns final population"""
 	#initialize ferns
@@ -188,10 +213,11 @@ def evolve(n=200, pop=20, mutation_rate=.1, crossover_rate=.7):
 	max_fitness = [0]*n
 	median_fitness = [0]*n
 	
+	state0 = [random_state() for i in range(20)] #simulations per evaluation
 	for generation in range(n):
 		#evaluate ferns
 		pop_fitness = np.array([0.0]*pop)
-		state0 = [random_state() for i in range(3)] #3 simulations per evaluation
+		#state0 = [random_state() for i in range(10)] #simulations per evaluation
 		for index, individual in enumerate(population):
 			pop_fitness[index] = fitness(individual, state0)
 		
@@ -234,14 +260,7 @@ def plot_phase(control=None, state0 = None):
 	"""generates a phase portrait and phase trajectory from initial conditions"""
 	#time = np.linspace(0, 20, 100) not needed for simulate()
 	
-	if state0 is None:
-		state0 = random_state()
-	#print "Initial: ", state0
-	
-	if control is None:
-		control = OptimalController()
-
-	results, time = simulate(50, 5, control, state0)
+	results, time = simulate(100, 10, control, state0)
 	theta, h = results[:,0], results[:,1]
 	#statew = [theta[-1], h[-1]]
 	#print "Final: ", statew
