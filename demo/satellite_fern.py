@@ -201,20 +201,30 @@ def median(sequence):
 #	mutation and crossover rates
 #	deterministic v stochastic evaluation
 #do I need to write a plotter for ferns?
-def evolve(n=200, pop=20, mutation_rate=.1, crossover_rate=.7):
+mutation_rate = .1
+crossover_rate = .7
+node_type_chance = .6
+mutation_type_chance_leaf = .25
+mutation_type_chance_fork = .15
+def evolve(gen=200, population=None, pop=20):
 	"""runs fern genetic algorithm and returns final population"""
-	#initialize ferns
-	r = fp.region2()
-	r[0], r[1] = fp.interval(-pi, pi), fp.interval(-2.0*J, 2.0*J)
-
-	population = [fp.fern2(r, 3) for i in range(pop)] #list of tuple(fern, fitness)
-	#time = np.linspace(0, .1, 100) not needed with simulate()
+	if population is None:
+		r = fp.region2()
+		r[0], r[1] = fp.interval(-pi, pi), fp.interval(-2.0*J, 2.0*J)
+		population = [fp.fern1(r, 3) for i in range(pop)]
+	else:
+		pop = len(population)
 	
-	max_fitness = [0]*n
-	median_fitness = [0]*n
+	for index, individual in enumerate(population):
+		population[index].set_node_type_chance(node_type_chance)
+		population[index].set_mutation_type_chance(mutation_type_chance_fork, 
+							   mutation_type_chance_leaf)
+	
+	max_fitness = [0]*gen
+	median_fitness = [0]*gen
 	
 	state0 = [random_state() for i in range(20)] #simulations per evaluation
-	for generation in range(n):
+	for generation in range(gen):
 		#evaluate ferns
 		pop_fitness = np.array([0.0]*pop)
 		#state0 = [random_state() for i in range(10)] #simulations per evaluation
@@ -230,7 +240,7 @@ def evolve(n=200, pop=20, mutation_rate=.1, crossover_rate=.7):
 		sys.stdout.write("\rgen %i" % generation)
 		sys.stdout.flush()
 		
-		if generation == n-1: 
+		if generation == gen-1: 
 			sys.stdout.write("\n")
 			break #skip breeding on last step
 		
@@ -248,8 +258,8 @@ def evolve(n=200, pop=20, mutation_rate=.1, crossover_rate=.7):
 	##### plots ########
 	plot_phase( population[ max_fitness_index ] ) #plot best solution
 	plot.figure()
-	plot.plot(range(n), max_fitness, color='green') #plot fitness progression
-	plot.plot(range(n), median_fitness, color='blue')
+	plot.plot(range(gen), max_fitness, color='green') #plot fitness progression
+	plot.plot(range(gen), median_fitness, color='blue')
 	plot.show()
 	
 	return population

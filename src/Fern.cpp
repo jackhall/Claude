@@ -25,7 +25,10 @@ namespace clau {
 
 	//=================== Fern methods ======================
 	template<dim_type D>
-	Fern<D>::Fern(const bin_type numBins) : root_region(), max_bin(numBins-1) {
+	Fern<D>::Fern(const bin_type numBins) : root_region(), max_bin(numBins-1),
+						node_type_chance(0.6),
+						mutation_type_chance_leaf(0.25), 
+						mutation_type_chance_fork(0.15) {
 		
 		Division root_division = {false, 1};
 		root = new Fork(nullptr, root_division, 0, 0);
@@ -36,7 +39,8 @@ namespace clau {
 	
 	template<dim_type D>
 	Fern<D>::Fern(const Region<D> bounds, const bin_type numBins) 
-		: root_region(bounds), max_bin(numBins-1) {
+		: root_region(bounds), max_bin(numBins-1), node_type_chance(0.6),
+		  mutation_type_chance_leaf(0.25), mutation_type_chance_fork(0.15) {
 		
 		Division root_division = {false, 1};
 		root = new Fork(nullptr, root_division, 0, 0);
@@ -50,7 +54,9 @@ namespace clau {
 	template<dim_type D>
 	Fern<D>::Fern(const Fern<D>& rhs) 
 		: root( new Fork(*rhs.root) ), root_region(rhs.root_region), 
-		  max_bin(rhs.max_bin) {
+		  max_bin(rhs.max_bin), node_type_chance(rhs.node_type_chance),
+		  mutation_type_chance_leaf(rhs.mutation_type_chance_leaf),
+		  mutation_type_chance_fork(rhs.mutation_type_chance_fork) {
 		  
 		std::random_device device;
 		generator.seed( device() );
@@ -61,6 +67,9 @@ namespace clau {
 		if(this != &rhs) {
 			root_region = rhs.root_region;
 			max_bin = rhs.max_bin;
+			node_type_chance = rhs.node_type_chance;
+			mutation_type_chance_leaf = rhs.mutation_type_chance_leaf;
+			mutation_type_chance_fork = rhs.mutation_type_chance_fork;
 			delete root;
 			root = new Fork(*rhs.root);
 		}
@@ -73,6 +82,26 @@ namespace clau {
 	}
 	
 	template<dim_type D>
+	bool Fern<D>::set_node_type_chance(const float chance) {
+		//returns false if chance is out of range
+		if(chance>=0.0 && chance<=1.0) {
+			node_type_chance = chance;
+			return true;
+		} else return false;
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::set_mutation_type_chance( const float chance_fork, 
+						const float chance_leaf) {
+		if(chance_fork >= 0.0 && chance_leaf>= 0.0 && 
+		   chance_fork <= 1.0 && chance_leaf>= 0.0) {
+		   	mutation_type_chance_fork = chance_fork;
+		   	mutation_type_chance_leaf = chance_leaf;
+		   	return true;
+		} else return false;
+	}
+	
+	template<dim_type D>
 	void Fern<D>::set_bounds(const Region<D> bounds) { 
 		root_region = bounds;
 		root->update_boundary(bounds);
@@ -81,10 +110,19 @@ namespace clau {
 	template<dim_type D>
 	void Fern<D>::mutate() { 
 		auto locus = begin();
-		locus.random();
-		std::bernoulli_distribution  mutation_type_chance(0.25);
-
-		if( mutation_type_chance(generator) ) 
+		std::bernoulli_distribution  node_type_gen(node_type_chance);
+		bool node_type = node_type_gen(generator);
+		if( node_type ) { //if locus is a leaf
+			while( !locus.is_leaf() ) locus.random();
+		} else { 
+			do locus.random(); 
+			while( locus.is_leaf() );
+		}
+		
+		std::bernoulli_distribution  mutation_type_gen( node_type ? 
+								mutation_type_chance_leaf :
+								mutation_type_chance_fork);
+		if( mutation_type_gen(generator) ) //if mutation is structural
 			if( !locus.mutate_structure() ) locus.mutate_value();
 		else locus.mutate_value();
 	}

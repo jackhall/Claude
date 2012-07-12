@@ -38,12 +38,24 @@ def median(sequence):
 		return sequence[ len(sequence)/2 ] 
 
 ###### genetic algorithm ######	
-def evolve(gen=200, pop=20, mutation_rate=.1, crossover_rate=.7):
+mutation_rate = .1
+crossover_rate = .7
+node_type_chance = .6
+mutation_type_chance_leaf = .25
+mutation_type_chance_fork = .15
+def evolve(gen=200, population=None, pop=20):
 	"""runs fern genetic algorithm and returns final population"""
-	s = fp.interval(-3.0, 3.0)
-	r = fp.region1()
-	r.set_uniform(s)
-	population = [fp.fern1(r, 2) for i in range(pop)]
+	if population is None:
+		r = fp.region1()
+		r.set_uniform( fp.interval(-3.0, 3.0) )
+		population = [fp.fern1(r, 2) for i in range(pop)]
+	else:
+		pop = len(population)
+	
+	for index, individual in enumerate(population):
+		population[index].set_node_type_chance(node_type_chance)
+		population[index].set_mutation_type_chance(mutation_type_chance_fork, 
+							   mutation_type_chance_leaf)
 	
 	max_fitness = [0]*gen
 	median_fitness = [0]*gen

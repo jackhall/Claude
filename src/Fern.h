@@ -213,6 +213,7 @@ namespace clau {
 		Region<D> root_region;
 		bin_type max_bin;
 		mutable rng_type generator;
+		float node_type_chance, mutation_type_chance_leaf, mutation_type_chance_fork;
 		
 		void update_boundary() { root->update_boundary(root_region); }
 		
@@ -222,6 +223,14 @@ namespace clau {
 		Fern(const Fern& rhs);
 		Fern& operator=(const Fern& rhs);
 		~Fern();
+		
+		//need to add these functions to test code
+		bool set_node_type_chance(const float chance);
+		bool set_mutation_type_chance(const float chance_fork, const float chance_leaf);
+		
+		float get_node_type_chance() { return node_type_chance; }
+		float get_mutation_type_chance_leaf() { return mutation_type_chance_leaf; }
+		float get_mutation_type_chance_fork() { return mutation_type_chance_fork; }
 		
 		void set_bounds(const Region<D> bounds);
 		//left out a way to change the number of bins, might need to add it back later
