@@ -120,7 +120,7 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def( self != self )
 		.def( self_ns::str(self) );
 	
-	//Interval& (Region<DIM>::*region_call_operator)(const dim_type) = &Region<DIM>::operator();
+	//////////////////////////////////////////////////////////////////////////
 	
 	class_< Region<1> >("region1")
 		.def( init<const Region<1>&>() )
@@ -195,6 +195,8 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def("is_root", &Fern<1>::node_handle::is_root)
 		.def("is_ghost", &Fern<1>::node_handle::is_ghost)
 		.def("belongs_to", &Fern<1>::node_handle::belongs_to); 
+	
+	///////////////////////////////////////////////////////////////////////
 	
 	class_< Region<2> >("region2")
 		.def( init<const Region<2>&>() )
