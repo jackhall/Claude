@@ -56,7 +56,7 @@ def dh(theta, h, control=None):
 	if control is None:
 		control = OptimalController()
 	
-	p = fp.point()
+	p = fp.point2()
 	p[0], p[1] = roll([theta, h]) 
 	mode = control.query(p) 
 	if mode is 0:
@@ -99,7 +99,7 @@ def simulate(t_final, dt, control=None, state0=None):
 	y_out, t_out = [], []
 	solver = spint.ode(fblank).set_integrator('vode', method='adams', with_jacobian=False) 
 	solver.set_initial_value(state0, 0.0) #thinks state0 has only one number in it?
-	p = fp.point()
+	p = fp.point2()
 	max_time = time.clock() + 0.5
 	while solver.t < t_final and solver.successful():
 		
@@ -204,10 +204,10 @@ def median(sequence):
 def evolve(n=200, pop=20, mutation_rate=.1, crossover_rate=.7):
 	"""runs fern genetic algorithm and returns final population"""
 	#initialize ferns
-	r = fp.region()
+	r = fp.region2()
 	r[0], r[1] = fp.interval(-pi, pi), fp.interval(-2.0*J, 2.0*J)
 
-	population = [fp.fern(r, 3) for i in range(pop)] #list of tuple(fern, fitness)
+	population = [fp.fern2(r, 3) for i in range(pop)] #list of tuple(fern, fitness)
 	#time = np.linspace(0, .1, 100) not needed with simulate()
 	
 	max_fitness = [0]*n
@@ -237,7 +237,7 @@ def evolve(n=200, pop=20, mutation_rate=.1, crossover_rate=.7):
 		#select parents and breed new population
 		new_population = []
 		for i in range(pop):
-			new_population.append(fp.fern( population[select(pop_fitness)] ))
+			new_population.append(fp.fern2( population[select(pop_fitness)] ))
 			if rand.random() < crossover_rate:
 				new_population[-1].crossover( population[select(pop_fitness)] ) 
 			if rand.random() < mutation_rate:
