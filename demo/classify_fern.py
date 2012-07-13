@@ -8,6 +8,17 @@ import scipy as sp #for argmax
 def random_seed(n):
 	rand.seed(n)
 
+def generate_data(n=1000):
+	"""generate distributions and classify them"""
+	numbers = np.random.normal(0.0, 1.0, n)
+	classes = [0]*n
+	for index, number in enumerate(numbers):
+		if number > 1.0:
+			classes[index] = 0
+		else:
+			classes[index] = 1
+	return numbers, classes
+
 ###### fitness evaluation #######
 def fitness(individual, numbers, classes):
 	"""procedure to compute evolutionary fitness"""
@@ -38,12 +49,12 @@ def median(sequence):
 		return sequence[ len(sequence)/2 ] 
 
 ###### genetic algorithm ######	
-mutation_rate = .1
-crossover_rate = .7
-node_type_chance = .6
-mutation_type_chance_leaf = .25
-mutation_type_chance_fork = .15
-def evolve(gen=200, population=None, pop=20):
+mutation_rate = .4 #best yet: .4
+crossover_rate = .05 #best yet: .05
+node_type_chance = .85 #best yet: .8
+mutation_type_chance_leaf = .15 #best yet: .15
+mutation_type_chance_fork = .1 #best yet: .1
+def evolve(gen=200, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
 		r = fp.region1()
@@ -60,17 +71,11 @@ def evolve(gen=200, population=None, pop=20):
 	max_fitness = [0]*gen
 	median_fitness = [0]*gen
 	
-	#generate distributions and classify them (np.random.normal)
-	n = 1000
-	numbers = np.random.normal(0.0, 1.0, n)
-	classes = [0]*n
-	for index, number in enumerate(numbers):
-		if number > 1.0:
-			classes[index] = 0
-		else:
-			classes[index] = 1
-	
 	for generation in range(gen):
+		#generating new data for each generation helps encourage
+		#a healthy genetic variation
+		numbers, classes = generate_data()
+	
 		#evaluate ferns
 		pop_fitness = np.array([0.0]*pop)
 		for index, individual in enumerate(population):
@@ -102,8 +107,8 @@ def evolve(gen=200, population=None, pop=20):
 		population = new_population
 	
 	plot.figure()
-	plot.plot(range(gen), max_fitness, color='green') #plot fitness progression
-	plot.plot(range(gen), median_fitness, color='blue')
+	plot.plot(range(gen), max_fitness, '+', color='green') #plot fitness progression
+	plot.plot(range(gen), median_fitness, 'x', color='blue')
 	plot.show()
 	
 	return population

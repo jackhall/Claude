@@ -201,12 +201,12 @@ def median(sequence):
 #	mutation and crossover rates
 #	deterministic v stochastic evaluation
 #do I need to write a plotter for ferns?
-mutation_rate = .1
-crossover_rate = .7
-node_type_chance = .6
-mutation_type_chance_leaf = .25
-mutation_type_chance_fork = .15
-def evolve(gen=200, population=None, pop=20):
+mutation_rate = .4 #best yet: .4
+crossover_rate = .05 #best yet: .05
+node_type_chance = .85 #best yet: .8
+mutation_type_chance_leaf = .15 #best yet: .15
+mutation_type_chance_fork = .1 #best yet: .1
+def evolve(gen=200, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
 		r = fp.region2()
@@ -223,8 +223,9 @@ def evolve(gen=200, population=None, pop=20):
 	max_fitness = [0]*gen
 	median_fitness = [0]*gen
 	
-	state0 = [random_state() for i in range(20)] #simulations per evaluation
 	for generation in range(gen):
+		state0 = [random_state() for i in range(10)] #simulations per evaluation
+	
 		#evaluate ferns
 		pop_fitness = np.array([0.0]*pop)
 		#state0 = [random_state() for i in range(10)] #simulations per evaluation
@@ -277,7 +278,7 @@ def plot_phase(control=None, state0 = None):
 	
 	#system trajectory
 	plot.figure() 
-	plot.plot(theta, h, color='green')
+	plot.plot(theta, h, color='green') #use polar(theta, h)?
 	
 	#phase portrait (vector field)
 	thetamax, hmax = max(abs(theta)), max(abs(h))
@@ -288,12 +289,18 @@ def plot_phase(control=None, state0 = None):
 			Dtheta[i,j] = dtheta(float(theta[i,j]), float(h[i,j]))
 			Dh[i,j] = dh(float(theta[i,j]), float(h[i,j]))
 
-	plot.quiver(theta, h, Dtheta, Dh) 
+	plot.quiver(theta, h, Dtheta, Dh) #no polar equivalent...
 	
 	#optimal path mode
 	h = np.linspace(-hmax, hmax, 20)
-	plot.plot(-0.5*thrust*h*abs(h)/J, h, color='blue')
+	plot.plot(-0.5*thrust*h*abs(h)/J, h, color='blue') #use polar(theta, h)?
 	
 	#plot.savefig("satellite-phase.png", dpi=200)
 	plot.show()
+	
+	#optimal mode in polar
+	#h = np.linspace(-20.0, 20.0, 100)
+	#plot.polar(-.5*h*abs(h)/100, h, color='blue')
+	#plot.show()
+	
 	
