@@ -17,6 +17,11 @@ def random_seed(n):
 ##### ode ######
 thrust = .5;
 J = 100
+h0 = 2 #range of random initial h is [-h0, h0]
+
+def path(h):
+	"""represents optimal return path and decision boundary"""
+	return -0.5*h*abs(h)/(J*thrust)
 
 def roll(y):
 	"""takes care of angle roll-over"""
@@ -30,17 +35,17 @@ def roll(y):
 def random_state():
 	"""generate random initial condition"""
 	theta = rand.random()*2*pi - pi #between -pi and pi rad
-	h = (rand.random()*2 - 1)*5	
+	h = (rand.random()*2 - 1)*h0	
 	return [theta, h]
 
 class OptimalController:
 	def query(self, point): 
 		"""mimics fern.query to give optimal control of the satellite"""
 		theta, h = point[0], point[1]
-		path = -0.5*thrust*h*abs(h)/J
-		if theta > path: 
+		manifold = path(h)
+		if theta > manifold: 
 			mode = 0
-		elif theta < path: 
+		elif theta < manifold: 
 			mode = 2
 		else: 
 			if h > 0: 
@@ -260,8 +265,8 @@ def evolve(gen=200, population=None, pop=50):
 	##### plots ########
 	plot_phase( population[ max_fitness_index ] ) #plot best solution
 	plot.figure()
-	plot.plot(range(gen), max_fitness, color='green') #plot fitness progression
-	plot.plot(range(gen), median_fitness, color='blue')
+	plot.plot(range(gen), max_fitness, '+', color='green') #plot fitness progression
+	plot.plot(range(gen), median_fitness, 'x', color='blue')
 	plot.show()
 	
 	return population
@@ -297,11 +302,11 @@ def plot_phase(control=None, state0 = None):
 	
 	#optimal path mode
 	h = np.linspace(-hmax, hmax, 100)
-	plot.plot(-0.5*thrust*h*abs(h)/J, h, color='blue') #use polar(theta, h)?
+	plot.plot(path(h), h, color='blue') #use polar(theta, h)?
 	
 	#optimal mode in polar
 	plot.figure(2)
-	plot.polar(-.5*h*abs(h)/100, h, color='blue')
+	plot.polar(path(h), h, color='blue')
 	plot.show()
 	#plot.savefig("satellite-phase.png", dpi=200)
 	
