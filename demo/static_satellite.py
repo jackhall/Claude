@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plot
 import scipy as sp #for argmax
 from math import pi
+from math import log
 
 def random_seed(n):
 	rand.seed(n)
@@ -71,6 +72,7 @@ crossover_rate = .05 #best yet: .05
 node_type_chance = .85 #best yet: .8
 mutation_type_chance_leaf = .15 #best yet: .15
 mutation_type_chance_fork = .1 #best yet: .1
+fitness_ratio = 3 #ratio of max fitness to median fitness (or mean)
 def evolve(gen=200, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
@@ -98,10 +100,15 @@ def evolve(gen=200, population=None, pop=50):
 		for index, individual in enumerate(population):
 			pop_fitness[index] = fitness(individual, numbers, classes)
 		
-		#record and then normalize fitness
+		#record max and median fitness
 		max_fitness_index = sp.argmax(pop_fitness)
 		max_fitness[generation] = pop_fitness[max_fitness_index]
 		median_fitness[generation] = median(pop_fitness)
+		
+		#control ratio of max to median fitness and normalize
+		if max_fitness[generation] != np.mean(pop_fitness): #median_fitness[generation]:
+			a = log(fitness_ratio) / (log(max_fitness[generation]) - log(np.mean(pop_fitness)))
+			pop_fitness **= a
 		pop_fitness /= sum(pop_fitness)
 		
 		sys.stdout.write("\rgen %i" % generation)
