@@ -15,7 +15,7 @@ def random_seed(n):
 	rand.seed(n)
 
 ##### ode ######
-thrust = 1;
+thrust = .5;
 J = 100
 
 def roll(y):
@@ -100,7 +100,7 @@ def simulate(t_final, dt, control=None, state0=None):
 	solver = spint.ode(fblank).set_integrator('vode', method='adams', with_jacobian=False) 
 	solver.set_initial_value(state0, 0.0) #thinks state0 has only one number in it?
 	p = fp.point2()
-	max_time = time.clock() + 0.5
+	max_time = time.clock() + 0.05
 	while solver.t < t_final and solver.successful():
 		
 		#select a control mode by setting torque
@@ -211,7 +211,7 @@ def evolve(gen=200, population=None, pop=50):
 	if population is None:
 		r = fp.region2()
 		r[0], r[1] = fp.interval(-pi, pi), fp.interval(-2.0*J, 2.0*J)
-		population = [fp.fern1(r, 3) for i in range(pop)]
+		population = [fp.fern2(r, 3) for i in range(pop)]
 	else:
 		pop = len(population)
 	
@@ -224,13 +224,14 @@ def evolve(gen=200, population=None, pop=50):
 	median_fitness = [0]*gen
 	
 	for generation in range(gen):
-		state0 = [random_state() for i in range(10)] #simulations per evaluation
+		state0 = [random_state() for i in range(5)] #10 simulations per evaluation
+		optimal_fitness = fitness(OptimalController(), state0)
 	
 		#evaluate ferns
 		pop_fitness = np.array([0.0]*pop)
 		#state0 = [random_state() for i in range(10)] #simulations per evaluation
 		for index, individual in enumerate(population):
-			pop_fitness[index] = fitness(individual, state0)
+			pop_fitness[index] = fitness(individual, state0) / optimal_fitness
 		
 		#record and then normalize fitness
 		max_fitness_index = sp.argmax(pop_fitness)
@@ -277,9 +278,11 @@ def plot_phase(control=None, state0 = None):
 	#print "Final: ", statew
 	
 	#system trajectory
-	plot.figure() 
+	plot.figure(1) 
 	plot.plot(theta, h, color='green') #use polar(theta, h)?
-	
+	plot.figure(2)
+	plot.polar(theta, h, color='green')
+		
 	#phase portrait (vector field)
 	thetamax, hmax = max(abs(theta)), max(abs(h))
 	theta, h = np.meshgrid(np.linspace(-thetamax, thetamax, 10), np.linspace(-hmax, hmax, 10))
@@ -288,19 +291,18 @@ def plot_phase(control=None, state0 = None):
 		for j in range(theta.shape[1]):
 			Dtheta[i,j] = dtheta(float(theta[i,j]), float(h[i,j]))
 			Dh[i,j] = dh(float(theta[i,j]), float(h[i,j]))
-
+	
+	plot.figure(1)
 	plot.quiver(theta, h, Dtheta, Dh) #no polar equivalent...
 	
 	#optimal path mode
-	h = np.linspace(-hmax, hmax, 20)
+	h = np.linspace(-hmax, hmax, 100)
 	plot.plot(-0.5*thrust*h*abs(h)/J, h, color='blue') #use polar(theta, h)?
 	
-	#plot.savefig("satellite-phase.png", dpi=200)
-	plot.show()
-	
 	#optimal mode in polar
-	#h = np.linspace(-20.0, 20.0, 100)
-	#plot.polar(-.5*h*abs(h)/100, h, color='blue')
-	#plot.show()
+	plot.figure(2)
+	plot.polar(-.5*h*abs(h)/100, h, color='blue')
+	plot.show()
+	#plot.savefig("satellite-phase.png", dpi=200)
 	
 	
