@@ -48,9 +48,6 @@ class leaf_iter:
 			self.node.right()
 		
 		self.left_most()
-	
-	
-		
 		
 
 def plot(fern):
@@ -61,10 +58,10 @@ def plot(fern):
 	size = 800
 
 	if type(fern) is fp.fern1:
-		canvas = tk.Canvas(master, width=size, height=50)
+		canvas = tk.Canvas(master, width=size, height=25)
 		canvas.pack()
-		scale = float(size) / fern.get_bounds(0).span()
-		xmin = fern.get_bounds(0).lower
+		scale = float(size) / fern.get_bounds(1).span()
+		xmin = fern.get_bounds(1).lower #something wrong here
 		x = (0, size)
 		
 		while True:
@@ -74,15 +71,15 @@ def plot(fern):
 			canvas.create_rectangle(x[0], 0, x[1], 50, 
 						fill=colors[it.node.get_leaf_bin()])
 			it.next()
-			if it == first: #never satisfied
+			if it.node == first.node: 
 				break
 		
 	elif type(fern) is fp.fern2:
 		canvas = tk.Canvas(master, width=size, height=size)
 		canvas.pack()
-		scale = float(size) / fern.get_bounds(0).span(), \
-			float(size) / fern.get_bounds(1).span()
-		xmin, ymin = fern.get_bounds(0).lower, fern.get_bounds(1).lower
+		scale = float(size) / fern.get_bounds(1).span(), \
+			float(size) / fern.get_bounds(2).span()
+		xmin, ymin = fern.get_bounds(1).lower, fern.get_bounds(2).lower
 		x, y = (0, size), (0, size)
 	
 		while True:
@@ -94,7 +91,7 @@ def plot(fern):
 			canvas.create_rectangle(x[0], y[0], x[1], y[1],
 						fill=colors[it.node.get_leaf_bin()])
 			it.next()
-			if it == first:
+			if it.node == first.node:
 				break
 	else:
 		print "error: only takes 1D or 2D fern inputs"
@@ -106,11 +103,20 @@ def fernplot_test(dim=1):
 	if dim is 1:
 		r = fp.region1()
 		r[0] = fp.interval(1.0, 3.0)
-		f = fp.fern1(r,2)
+		f = fp.fern1(r, 2)
 		n = f.begin()
 		n.right()
 		n.set_leaf_bin(1)
 		
+		plot(f)
+		
+	if dim is 2:
+		r = fp.region2()
+		r.set_uniform(fp.interval(1.0, 3.0))
+		f = fp.fern2(r, 3)
+		for i in range(50):
+			f.mutate()
+		print f
 		plot(f)
 
 def tkinter_test():
