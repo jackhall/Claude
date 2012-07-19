@@ -105,7 +105,7 @@ def simulate(t_final, dt, control=None, state0=None):
 	solver = spint.ode(fblank).set_integrator('vode', method='adams', with_jacobian=False) 
 	solver.set_initial_value(state0, 0.0) #thinks state0 has only one number in it?
 	p = fp.point2()
-	max_time = time.clock() + 0.05
+	max_time = time.clock() + 0.1
 	while solver.t < t_final and solver.successful():
 		
 		#select a control mode by setting torque
@@ -144,12 +144,14 @@ def simulate(t_final, dt, control=None, state0=None):
 		#go back one step, cut step size in half until switch time is known
 		solver.set_initial_value(y_out[-1], t_out[-1])
 		bisect_step = dt / 2.0
-		while True:
+		while True: #program hangs here somewhere
 			y_current, t_current = solver.y, solver.t
 			solver.integrate(solver.t + bisect_step)
 			if abs(solver.y[0]) > pi:
 				solver.set_initial_value(roll(solver.y), solver.t)
 			p[0], p[1] = solver.y
+			#sys.stdout.write("\rstep size: %f" % bisect_step)
+			#sys.stdout.flush()
 			if control.query(p) != mode:
 				if bisect_step < 0.001:
 					break
@@ -165,6 +167,7 @@ def simulate(t_final, dt, control=None, state0=None):
 	
 
 ###### fitness evaluation #######
+momentum_weight = .2;
 def fitness(individual, state0):
 	"""procedure to compute evolutionary fitness from a simulation"""
 	#simulate
@@ -172,6 +175,7 @@ def fitness(individual, state0):
 	for i in state0: 
 		results, time = simulate(100, 10, individual, i)
 		total_error += spint.trapz(abs(results[:,0]), time)
+		total_error += spint.trapz(abs(results[:,1]), time)
 		#total_error += abs(results[-1,0])
 	return 3000.0/total_error 
 	
@@ -211,6 +215,7 @@ crossover_rate = .05 #best yet: .05
 node_type_chance = .85 #best yet: .8
 mutation_type_chance_leaf = .15 #best yet: .15
 mutation_type_chance_fork = .1 #best yet: .1
+fitness_ratio = 3 #ratio of max fitness to median fitness (or mean)
 def evolve(gen=200, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
@@ -229,7 +234,7 @@ def evolve(gen=200, population=None, pop=50):
 	median_fitness = [0]*gen
 	
 	for generation in range(gen):
-		state0 = [random_state() for i in range(5)] #10 simulations per evaluation
+		state0 = [random_state() for i in range(5)] #5 simulations per evaluation
 		optimal_fitness = fitness(OptimalController(), state0)
 	
 		#evaluate ferns
@@ -242,6 +247,12 @@ def evolve(gen=200, population=None, pop=50):
 		max_fitness_index = sp.argmax(pop_fitness)
 		max_fitness[generation] = pop_fitness[max_fitness_index]
 		median_fitness[generation] = median(pop_fitness)
+		
+		#control ratio of max to median fitness and normalize
+		#fitness_mean = np.mean(pop_fitness);
+		if max_fitness[generation] != median_fitness[generation]: #fitness_mean: 
+			a = log(fitness_ratio) / (log(max_fitness[generation]) - log(median_fitness[generation]))
+			pop_fitness = (pop_fitness - median_fitness[generation])**a + median_fitness[generation]
 		pop_fitness /= sum(pop_fitness)
 		
 		sys.stdout.write("\rgen %i" % generation)

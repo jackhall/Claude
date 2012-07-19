@@ -4,6 +4,7 @@ import sys #for printing
 import numpy as np
 import matplotlib.pyplot as plot
 import scipy as sp #for argmax
+from math import log
 
 def random_seed(n):
 	rand.seed(n)
@@ -48,13 +49,14 @@ def median(sequence):
 	else:
 		return sequence[ len(sequence)/2 ] 
 
-###### genetic algorithm ######	
+###### genetic algorithm ######	 working! don't touch now
 mutation_rate = .4 #best yet: .4
 crossover_rate = .05 #best yet: .05
-node_type_chance = .85 #best yet: .8
+node_type_chance = .85 #best yet: .85
 mutation_type_chance_leaf = .15 #best yet: .15
 mutation_type_chance_fork = .1 #best yet: .1
-def evolve(gen=200, population=None, pop=50):
+#fitness_ratio = 2 #ratio of max fitness to median fitness (or mean)
+def evolve(gen=600, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
 		r = fp.region1()
@@ -70,6 +72,7 @@ def evolve(gen=200, population=None, pop=50):
 	
 	max_fitness = [0]*gen
 	median_fitness = [0]*gen
+	min_fitness = [0]*gen
 	
 	for generation in range(gen):
 		#generating new data for each generation helps encourage
@@ -85,6 +88,13 @@ def evolve(gen=200, population=None, pop=50):
 		max_fitness_index = sp.argmax(pop_fitness)
 		max_fitness[generation] = pop_fitness[max_fitness_index]
 		median_fitness[generation] = median(pop_fitness)
+		min_fitness[generation] = min(pop_fitness)
+		
+		#control ratio of max to median fitness and normalize
+		#fitness_mean = np.mean(pop_fitness);
+		#if max_fitness[generation] != fitness_mean: 
+		#	a = log(fitness_ratio) / (log(max_fitness[generation]) - log(fitness_mean))
+		#	pop_fitness = (pop_fitness - fitness_mean)**a + fitness_mean
 		pop_fitness /= sum(pop_fitness)
 		
 		sys.stdout.write("\rgen %i" % generation)
@@ -109,6 +119,7 @@ def evolve(gen=200, population=None, pop=50):
 	plot.figure()
 	plot.plot(range(gen), max_fitness, '+', color='green') #plot fitness progression
 	plot.plot(range(gen), median_fitness, 'x', color='blue')
+	plot.plot(range(gen), min_fitness, '.', color = 'red')
 	plot.show()
 	
 	return population
