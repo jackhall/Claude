@@ -116,6 +116,7 @@ BOOST_PYTHON_MODULE(fernpy) {
 		//.def("__deepcopy", &std_deepcopy<Interval>)
 		.def_readwrite("lower", &Interval::lower)
 		.def_readwrite("upper", &Interval::upper)
+		.def("span", &Interval::span)
 		.def( self == self )
 		.def( self != self )
 		.def( self_ns::str(self) );
@@ -131,7 +132,9 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def( self != self )
 		.def( self_ns::str(self) )
 		.def("__getitem__", &std_item< Region<1> >::get)
-		.def("__setitem__", &std_item< Region<1> >::set);
+		.def("__setitem__", &std_item< Region<1> >::set)
+		.def("split", &Region<1>::split)
+		.def("expand", &Region<1>::expand);
 	
 	class_< Point<1> >("point1")
 		.def( init<const Point<1>&>() )
@@ -163,13 +166,13 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def( self_ns::str(self) )
 		.def("begin", &Fern<1>::begin);
 	
-	class_< Fern<1>::Division >("division1")
-		.def( init<const Fern<1>::Division&>() )
+	class_< Division<1> >("division1")
+		.def( init<const Division<1>&>() )
 		//.def("__copy__", &std_copy< Fern<DIM>::Division >)
 		//.def("__deepcopy__", &std_deepcopy< Fern<DIM>::Division >)
 		.def( init<bool, dim_type>() )
-		.def_readwrite("bit", &Fern<1>::Division::bit)
-		.def_readwrite("dimension", &Fern<1>::Division::dimension);
+		.def_readwrite("bit", &Division<1>::bit)
+		.def_readwrite("dimension", &Division<1>::dimension);
 	
 	class_< Fern<1>::node_handle >("node_handle1") 
 		.def( init<const Fern<1>::node_handle&>() )
@@ -196,6 +199,8 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def("set_fork_dimension", &Fern<1>::node_handle::set_fork_dimension)
 		.def("get_fork_bit", &Fern<1>::node_handle::get_fork_bit)
 		.def("set_fork_bit", &Fern<1>::node_handle::set_fork_bit)
+		.def("get_fork_division", &Fern<1>::node_handle::get_fork_division)
+		.def("set_fork_division", &Fern<1>::node_handle::set_fork_division)
 		.def("is_leaf", &Fern<1>::node_handle::is_leaf)
 		.def("is_root", &Fern<1>::node_handle::is_root)
 		.def("is_ghost", &Fern<1>::node_handle::is_ghost)
@@ -212,7 +217,9 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def( self != self )
 		.def( self_ns::str(self) )
 		.def("__getitem__", &std_item< Region<2> >::get)
-		.def("__setitem__", &std_item< Region<2> >::set);
+		.def("__setitem__", &std_item< Region<2> >::set)
+		.def("split", &Region<2>::split)
+		.def("expand", &Region<2>::expand);
 	
 	class_< Point<2> >("point2")
 		.def( init<const Point<2>&>() )
@@ -244,13 +251,13 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def( self_ns::str(self) )
 		.def("begin", &Fern<2>::begin);
 	
-	class_< Fern<2>::Division >("division2")
-		.def( init<const Fern<2>::Division&>() )
+	class_< Division<2> >("division2")
+		.def( init<const Division<2>&>() )
 		//.def("__copy__", &std_copy< Fern<DIM>::Division >)
 		//.def("__deepcopy__", &std_deepcopy< Fern<DIM>::Division >)
 		.def( init<bool, dim_type>() )
-		.def_readwrite("bit", &Fern<2>::Division::bit)
-		.def_readwrite("dimension", &Fern<2>::Division::dimension);
+		.def_readwrite("bit", &Division<2>::bit)
+		.def_readwrite("dimension", &Division<2>::dimension);
 	
 	class_< Fern<2>::node_handle >("node_handle2") 
 		.def( init<const Fern<2>::node_handle&>() )
@@ -277,6 +284,8 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def("set_fork_dimension", &Fern<2>::node_handle::set_fork_dimension)
 		.def("get_fork_bit", &Fern<2>::node_handle::get_fork_bit)
 		.def("set_fork_bit", &Fern<2>::node_handle::set_fork_bit)
+		.def("get_fork_division", &Fern<2>::node_handle::get_fork_division)
+		.def("set_fork_division", &Fern<2>::node_handle::set_fork_division)
 		.def("is_leaf", &Fern<2>::node_handle::is_leaf)
 		.def("is_root", &Fern<2>::node_handle::is_root)
 		.def("is_ghost", &Fern<2>::node_handle::is_ghost)

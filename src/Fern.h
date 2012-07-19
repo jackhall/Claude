@@ -45,6 +45,8 @@ namespace clau {
 			{ return (lower==rhs.lower) && (upper==rhs.upper); }
 		bool operator!=(const Interval& rhs) const { return !(*this==rhs); }
 		
+		num_type span() const { return upper - lower; }
+		
 		friend std::ostream& operator<<(std::ostream& out, const Interval& interval);
 	};
 	
@@ -54,12 +56,23 @@ namespace clau {
 	}
 	
 	template<dim_type D>
+	struct Division {
+		bool bit;
+		dim_type dimension;
+		
+		Division() : bit(false), dimension(1) {}
+		Division(const bool bBit, const dim_type dim=1) : bit(bBit), dimension(dim) 
+			{ if(dim <= 0 || dim > D) dimension = 1; }
+	};
+	
+	template<dim_type D>
 	class Region {
 	private:
 		std::array<Interval, D> limits;
+		
 	public:
 		typedef Interval value_type;
-
+	
 		Region() { 
 			Interval null_interval;
 			for(int i=D-1; i>=0; --i) limits[i] = null_interval;
@@ -85,6 +98,25 @@ namespace clau {
 		const Interval& operator()(const dim_type dimension) const 
 			{ return limits[dimension-1]; }
 		dim_type size() const { return D; }
+		void split(const Division<D> division, const bool side) {
+			num_type ratio = 2.0/(1.0 + sqrt(5));
+			Interval& interval = limits[division.dimension-1];
+			num_type new_span;
+			if( side xor division.bit ) new_span = interval.span()*ratio;
+			else new_span = interval.span()*(1.0 - ratio);
+			if(side) interval.lower = interval.upper - new_span;
+			else interval.upper = interval.lower + new_span;
+		}
+		void expand(const Division<D> division, const bool side) {
+			num_type ratio = 2.0/(1.0 + sqrt(5));
+			Interval& interval = limits[division.dimension-1];
+			num_type new_span;
+			if( side xor division.bit ) new_span = interval.span()/ratio;
+			else new_span = interval.span()/(1.0 - ratio);
+			if(side) interval.lower = interval.upper - new_span;
+			else interval.upper = interval.lower + new_span;
+		}
+		
 	};
 	
 	template<dim_type T>
@@ -133,15 +165,6 @@ namespace clau {
 	class Fern {
 	public:
 		class node_handle; //forward declaration as a friend class for Node and Fork
-		
-		struct Division {
-			bool bit;
-			dim_type dimension;
-			
-			Division() : bit(false), dimension(1) {}
-			Division(const bool bBit, const dim_type dim=1) : bit(bBit), dimension(dim) 
-				{ if(dim <= 0 || dim > D) dimension = 1; }
-		};
 		
 	private:
 		struct Node {
@@ -192,13 +215,13 @@ namespace clau {
 		*/
 		private: 
 			Node *left, *right;
-			Division value;
+			Division<D> value;
 			num_type boundary;
 			friend class node_handle;
 		
 		public:
 			Fork() = delete;
-			Fork(Fork* pParent, const Division cValue, 
+			Fork(Fork* pParent, const Division<D> cValue, 
 			     const bin_type left_bin, const bin_type right_bin);
 			Fork(const Fork& rhs);
 			Fork& operator=(const Fork& rhs);
@@ -296,7 +319,7 @@ namespace clau {
 			bool mutate_structure();
 			bool splice(const node_handle& other);
 			
-			bool split_leaf(const Division new_value);
+			bool split_leaf(const Division<D> new_value);
 			bin_type get_leaf_bin() const;
 			bool set_leaf_bin(const bin_type new_bin);
 			bin_type get_max_bin() const { return fern->max_bin; }
@@ -307,6 +330,8 @@ namespace clau {
 			bool set_fork_dimension(const dim_type new_dimension);
 			bool get_fork_bit() const;
 			bool set_fork_bit(const bool new_bit);
+			Division<D> get_fork_division() const;
+			bool set_fork_division(const Division<D> division);
 			
 			bool is_leaf() const { return current->leaf; }
 			bool is_root() const { return current->parent == nullptr; }

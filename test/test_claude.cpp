@@ -112,7 +112,7 @@ namespace {
 		void ExpandFern() { //for Pruning and Splicing cases
 			using namespace clau;
 			node.left().set_leaf_bin(1);
-			Fern<2>::Division division(true, 2);
+			Division<2> division(true, 2);
 			node.split_leaf(division);
 		
 			node.right();
@@ -161,7 +161,7 @@ namespace {
 		//builds fern identical to NodeManipulationTest::ExpandTree()
 		using namespace clau;
 		node.left().set_leaf_bin(1);
-		Fern<2>::Division division(true, 2);
+		Division<2> division(true, 2);
 		EXPECT_TRUE(node.split_leaf(division));
 		//check aftermath of split
 		ASSERT_FALSE(node.is_leaf());
@@ -233,7 +233,7 @@ namespace {
 		auto node2 = origin_fern.begin();
 		node2.left();
 		EXPECT_TRUE(node2.set_leaf_bin(1));
-		Fern<2>::Division division(false, 2);
+		Division<2> division(false, 2);
 		EXPECT_TRUE(node2.split_leaf(division));
 		EXPECT_TRUE(node2.right().split_leaf(division));
 		EXPECT_TRUE(node2.right().set_leaf_bin(0));
@@ -273,7 +273,7 @@ namespace {
 		void ExpandFern() {
 			using namespace clau;
 			node.left().set_leaf_bin(1);
-			Fern<2>::Division division(true, 2);
+			Division<2> division(true, 2);
 			node.split_leaf(division);
 			node.left().set_leaf_bin(0);
 			node.up();

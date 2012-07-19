@@ -30,7 +30,7 @@ namespace clau {
 						mutation_type_chance_leaf(0.25), 
 						mutation_type_chance_fork(0.15) {
 		
-		Division root_division = {false, 1};
+		Division<D> root_division = {false, 1};
 		root = new Fork(nullptr, root_division, 0, 0);
 		
 		std::random_device device;
@@ -42,7 +42,7 @@ namespace clau {
 		: root_region(bounds), max_bin(numBins-1), node_type_chance(0.6),
 		  mutation_type_chance_leaf(0.25), mutation_type_chance_fork(0.15) {
 		
-		Division root_division = {false, 1};
+		Division<D> root_division = {false, 1};
 		root = new Fork(nullptr, root_division, 0, 0);
 		
 		root->update_boundary(root_region);
@@ -152,7 +152,7 @@ namespace clau {
 	
 	//==================== Fern::Fork methods ===================
 	template<dim_type D>
-	Fern<D>::Fork::Fork(Fork* pParent, const Division cValue, 
+	Fern<D>::Fork::Fork(Fork* pParent, const Division<D> cValue, 
 			    const bin_type left_bin, const bin_type right_bin) 
 		: Node(pParent, false), value(cValue) {
 		//does not set boundary! This should be done by node_handle from the root node
@@ -345,8 +345,8 @@ namespace clau {
 		
 			std::bernoulli_distribution random_bit(0.5);
 			std::uniform_int_distribution<dim_type> random_int(1, D);
-			Division new_division = { random_bit(fern->generator), 
-						  random_int(fern->generator) };
+			Division<D> new_division = { random_bit(fern->generator), 
+						     random_int(fern->generator) };
 			return split_leaf(new_division); //performs ghost check
 			
 		} else return merge_fork(); //performs root, ghost and child checks
@@ -391,7 +391,7 @@ namespace clau {
 	}
 	
 	template<dim_type D>
-	bool Fern<D>::node_handle::split_leaf(const Division new_value) {
+	bool Fern<D>::node_handle::split_leaf(const Division<D> new_value) {
 		//returns false for forks or if leaf is a ghost
 		if( current->leaf ) {
 			
@@ -503,6 +503,12 @@ namespace clau {
 	}
 	
 	template<dim_type D>
+	Division<D> Fern<D>::node_handle::get_fork_division() const {
+		if( is_leaf() ) return false;
+		else return static_cast<Fork*>(current)->value;
+	}
+	
+	template<dim_type D>
 	bool Fern<D>::node_handle::set_fork_dimension(const dim_type new_dimension) {
 		//returns false for leaves or if new_dimension is out-of-range
 		if( !is_leaf() && (new_dimension <= D) && (new_dimension > 0) ) {
@@ -520,6 +526,17 @@ namespace clau {
 		if( !is_leaf() ) {
 		
 			static_cast<Fork*>(current)->value.bit = new_bit;
+			fern->update_boundary(); //doesn't run properly
+			return true;
+			
+		} else return false;
+	}
+	
+	template<dim_type D>
+	bool Fern<D>::node_handle::set_fork_division(const Division<D> division) {
+		if( !is_leaf() ) {
+		
+			static_cast<Fork*>(current)->value = division;
 			fern->update_boundary(); //doesn't run properly
 			return true;
 			
