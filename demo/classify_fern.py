@@ -52,24 +52,27 @@ def median(sequence):
 
 ###### genetic algorithm ######	 working! don't touch now
 mutation_rate = .4 #best yet: .4
-crossover_rate = .05 #best yet: .05
+crossover_rate = .2 #best yet: .05
 node_type_chance = .85 #best yet: .85
 mutation_type_chance_leaf = .15 #best yet: .15
 mutation_type_chance_fork = .1 #best yet: .1
 #fitness_ratio = 2 #ratio of max fitness to median fitness (or mean)
-def evolve(gen=600, population=None, pop=50):
+def evolve(gen=200, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
 		r = fp.region1()
 		r.set_uniform( fp.interval(-3.0, 3.0) )
 		population = [fp.fern1(r, 2) for i in range(pop)]
+		randomize = True
 	else:
 		pop = len(population)
+		randomize = False
 	
 	for index, individual in enumerate(population):
 		population[index].set_node_type_chance(node_type_chance)
 		population[index].set_mutation_type_chance(mutation_type_chance_fork, 
 							   mutation_type_chance_leaf)
+		population[index].randomize(15)
 	
 	max_fitness = [0]*gen
 	median_fitness = [0]*gen

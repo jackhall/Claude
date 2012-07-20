@@ -54,14 +54,14 @@ def plot(fern):
 	it = leaf_iter(fern)
 	first = leaf_iter(fern)
 	master = tk.Tk()
-	colors = ["blue", "green", "red"]
+	colors = ["blue", "red", "green"]
 	size = 800
 
 	if type(fern) is fp.fern1:
 		canvas = tk.Canvas(master, width=size, height=25)
 		canvas.pack()
 		scale = float(size) / fern.get_bounds(1).span()
-		xmin = fern.get_bounds(1).lower #something wrong here
+		xmin = fern.get_bounds(1).lower 
 		x = (0, size)
 		
 		while True:
@@ -90,6 +90,7 @@ def plot(fern):
 			    round((yint.upper-xmin) * scale[1])
 			canvas.create_rectangle(x[0], y[0], x[1], y[1],
 						fill=colors[it.node.get_leaf_bin()])
+			#print colors[it.node.get_leaf_bin()]
 			it.next()
 			if it.node == first.node:
 				break

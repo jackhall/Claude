@@ -36,7 +36,7 @@ def roll(y):
 def random_state():
 	"""generate random initial condition"""
 	theta = rand.random()*2*pi - pi #between -pi and pi rad
-	h = (rand.random()*2 - 1)*h0	
+	h = 0.0 #(rand.random()*2 - 1)*h0	
 	return [theta, h]
 
 class OptimalController:
@@ -127,8 +127,8 @@ def simulate(t_final, dt, control=None, state0=None):
 			y_out.append(solver.y)
 			t_out.append(solver.t)
 			solver.integrate(solver.t + dt)
-			if abs(solver.y[0]) > pi:
-				solver.set_initial_value(roll(solver.y), solver.t)
+			#if abs(solver.y[0]) > pi:
+			#	solver.set_initial_value(roll(solver.y), solver.t)
 			p[0], p[1] = solver.y
 			if sum(abs(solver.y)) < state_tolerance:
 				solver.set_f_params(0.0)
@@ -145,11 +145,11 @@ def simulate(t_final, dt, control=None, state0=None):
 		#go back one step, cut step size in half until switch time is known
 		solver.set_initial_value(y_out[-1], t_out[-1])
 		bisect_step = dt / 2.0
-		while True: #program hangs here somewhere
+		while solver.successful(): #program hangs here somewhere
 			y_current, t_current = solver.y, solver.t
 			solver.integrate(solver.t + bisect_step)
-			if abs(solver.y[0]) > pi: #two if statements interacting to stop break
-				solver.set_initial_value(roll(solver.y), solver.t)
+			#if abs(solver.y[0]) > pi: #two if statements interacting to stop break
+			#	solver.set_initial_value(roll(solver.y), solver.t)
 			p[0], p[1] = solver.y
 			#sys.stdout.write("\rstep size: %f" % bisect_step)
 			#sys.stdout.flush()
@@ -158,6 +158,11 @@ def simulate(t_final, dt, control=None, state0=None):
 					break
 				solver.set_initial_value(y_current, t_current)
 			bisect_step /= 2.0
+			if time.clock() > max_time:
+				break
+				
+		if time.clock() > max_time: #solver hit time limit
+				break
 	
 	#if solver hit the time limit
 	if t_out[-1] < t_final: 
@@ -216,20 +221,26 @@ crossover_rate = .05 #best yet: .05
 node_type_chance = .85 #best yet: .8
 mutation_type_chance_leaf = .15 #best yet: .15
 mutation_type_chance_fork = .1 #best yet: .1
-fitness_ratio = 3 #ratio of max fitness to median fitness (or mean)
+#fitness_ratio = 3 #ratio of max fitness to median fitness (or mean)
 def evolve(gen=200, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
 		r = fp.region2()
-		r[0], r[1] = fp.interval(-pi, pi), fp.interval(-2.0*J, 2.0*J)
+		r[0], r[1] = fp.interval(-4*pi, 4*pi), fp.interval(-2.0*J, 2.0*J)
 		population = [fp.fern2(r, 3) for i in range(pop)]
+		randomize = True
 	else:
 		pop = len(population)
+		randomize = False
 	
 	for index, individual in enumerate(population):
 		population[index].set_node_type_chance(node_type_chance)
 		population[index].set_mutation_type_chance(mutation_type_chance_fork, 
 							   mutation_type_chance_leaf)
+	
+	if randomize:
+		for index, individual in enumerate(population):
+			population[index].randomize(200)
 	
 	max_fitness = [0]*gen
 	median_fitness = [0]*gen
@@ -251,9 +262,9 @@ def evolve(gen=200, population=None, pop=50):
 		
 		#control ratio of max to median fitness and normalize
 		#fitness_mean = np.mean(pop_fitness);
-		if max_fitness[generation] != median_fitness[generation]: #fitness_mean: 
-			a = log(fitness_ratio) / (log(max_fitness[generation]) - log(median_fitness[generation]))
-			pop_fitness = (pop_fitness - median_fitness[generation])**a + median_fitness[generation]
+		#if max_fitness[generation] != median_fitness[generation]: #fitness_mean: 
+		#	a = log(fitness_ratio) / (log(max_fitness[generation]) - log(median_fitness[generation]))
+		#	pop_fitness = (pop_fitness - median_fitness[generation])**a + median_fitness[generation]
 		pop_fitness /= sum(pop_fitness)
 		
 		sys.stdout.write("\rgen %i" % generation)
@@ -276,6 +287,7 @@ def evolve(gen=200, population=None, pop=50):
 			
 	##### plots ########
 	fplt.plot( population[max_fitness_index] )
+	#print population[max_fitness_index]
 	
 	plot_phase( population[ max_fitness_index ] ) #plot best solution
 	plot.figure()

@@ -28,16 +28,16 @@ def generate_data(n=1000):
 	for index, number in enumerate(numbers):
 		manifold = path(number[1])
 		if number[0] > manifold: 
-			classes[index] = 0
+			classes[index] = 1
 		elif number[0] < manifold: 
 			classes[index] = 2
 		else: 
 			if number[1] > 0: 
-				classes[index] = 0
+				classes[index] = 1
 			elif number[1] < 0:
 				classes[index] = 2
 			else:
-				classes[index] = 1
+				classes[index] = 0
 	return numbers, classes
 
 ###### fitness evaluation #######
@@ -71,24 +71,30 @@ def median(sequence):
 
 ###### genetic algorithm ######	
 mutation_rate = .4 #best yet: .4
-crossover_rate = .1 #best yet: .1
+crossover_rate = .2 #best yet: .1
 node_type_chance = .7 #best yet: .7
 mutation_type_chance_leaf = .15 #best yet: .15
 mutation_type_chance_fork = .1 #best yet: .1
 #fitness_ratio = 2 #ratio of max fitness to median fitness (or mean)
-def evolve(gen=2000, population=None, pop=50):
+def evolve(gen=500, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
 		r = fp.region2()
 		r.set_uniform( fp.interval(-pi, pi) )
 		population = [fp.fern2(r, 3) for i in range(pop)]
+		randomize=True
 	else:
 		pop = len(population)
+		randomize=False
 	
 	for index, individual in enumerate(population):
 		population[index].set_node_type_chance(node_type_chance)
 		population[index].set_mutation_type_chance(mutation_type_chance_fork, 
 							   mutation_type_chance_leaf)
+	
+	if randomize:
+		for index, individual in enumerate(population):
+			population[index].randomize(500)
 	
 	max_fitness = [0]*gen
 	median_fitness = [0]*gen

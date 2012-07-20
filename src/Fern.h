@@ -263,6 +263,7 @@ namespace clau {
 			{ return root_region(dimension); }
 		bin_type get_num_bins() const { return max_bin+1; }
 		
+		void randomize(const unsigned int mutations);
 		void mutate();
 		void crossover(const Fern& other); 
 		bin_type query(const Point<D> point) const { return root->query(point); }

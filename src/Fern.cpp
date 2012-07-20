@@ -108,6 +108,18 @@ namespace clau {
 	}
 	
 	template<dim_type D>
+	void Fern<D>::randomize(const unsigned int mutations) {
+		auto locus = begin();
+		for(int i=mutations; i>0; i--) {
+			while( !locus.is_leaf() ) locus.random();
+			std::bernoulli_distribution mutation_type_gen(mutation_type_chance_leaf);
+			if( mutation_type_gen(generator) ) { //if mutation is structural
+				if( !locus.mutate_structure() ) locus.mutate_value();
+			} else locus.mutate_value();
+		}
+	}
+	
+	template<dim_type D>
 	void Fern<D>::mutate() { 
 		auto locus = begin();
 		std::bernoulli_distribution  node_type_gen(node_type_chance);
@@ -122,9 +134,9 @@ namespace clau {
 		std::bernoulli_distribution  mutation_type_gen( node_type ? 
 								mutation_type_chance_leaf :
 								mutation_type_chance_fork);
-		if( mutation_type_gen(generator) ) //if mutation is structural
+		if( mutation_type_gen(generator) ) { //if mutation is structural
 			if( !locus.mutate_structure() ) locus.mutate_value();
-		else locus.mutate_value();
+		} else locus.mutate_value();
 	}
 	
 	template<dim_type D>
