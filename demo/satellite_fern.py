@@ -8,6 +8,7 @@ import scipy.integrate as spint
 import random as rand
 import sys #for printing
 import time #for time limit on simulations and pausing
+import fernplot as fplt
 
 #rand.seed(3) #call with no arguments for true randomness
 
@@ -44,16 +45,16 @@ class OptimalController:
 		theta, h = point[0], point[1]
 		manifold = path(h)
 		if theta > manifold: 
-			mode = 0
+			mode = 1
 		elif theta < manifold: 
 			mode = 2
 		else: 
 			if h > 0: 
-				mode = 0
+				mode = 1
 			elif h < 0:
 				mode = 2
 			else:
-				mode = 1
+				mode = 0
 		return mode
 		
 def dh(theta, h, control=None):
@@ -65,9 +66,9 @@ def dh(theta, h, control=None):
 	p[0], p[1] = roll([theta, h]) 
 	mode = control.query(p) 
 	if mode is 0:
-		torque = -thrust
-	elif mode is 1:
 		torque = 0
+	elif mode is 1:
+		torque = -thrust
 	elif mode is 2:
 		torque = thrust		
 	return torque
@@ -112,9 +113,9 @@ def simulate(t_final, dt, control=None, state0=None):
 		p[0], p[1] = solver.y
 		mode = control.query(p) 
 		if mode is 0:
-			solver.set_f_params(-thrust)
-		elif mode is 1:
 			solver.set_f_params(0.0)
+		elif mode is 1:
+			solver.set_f_params(-thrust)
 		elif mode is 2:
 			solver.set_f_params(thrust)
 
@@ -147,7 +148,7 @@ def simulate(t_final, dt, control=None, state0=None):
 		while True: #program hangs here somewhere
 			y_current, t_current = solver.y, solver.t
 			solver.integrate(solver.t + bisect_step)
-			if abs(solver.y[0]) > pi:
+			if abs(solver.y[0]) > pi: #two if statements interacting to stop break
 				solver.set_initial_value(roll(solver.y), solver.t)
 			p[0], p[1] = solver.y
 			#sys.stdout.write("\rstep size: %f" % bisect_step)
@@ -274,6 +275,8 @@ def evolve(gen=200, population=None, pop=50):
 		population = new_population
 			
 	##### plots ########
+	fplt.plot( population[max_fitness_index] )
+	
 	plot_phase( population[ max_fitness_index ] ) #plot best solution
 	plot.figure()
 	plot.plot(range(gen), max_fitness, '+', color='green') #plot fitness progression

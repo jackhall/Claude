@@ -6,6 +6,7 @@ import matplotlib.pyplot as plot
 import scipy as sp #for argmax
 from math import pi
 from math import log
+import fernplot as fplt
 
 def random_seed(n):
 	rand.seed(n)
@@ -20,7 +21,9 @@ def path(h):
 
 def generate_data(n=1000):
 	"""generate distributions and classify them"""
-	numbers = np.random.uniform(-pi, pi, (n, 2))
+	h = np.random.uniform(-pi, pi, n)
+	theta = path(h) + np.random.normal(0.0, 0.5, n)
+	numbers = np.vstack((theta, h)).T
 	classes = [0]*n
 	for index, number in enumerate(numbers):
 		manifold = path(number[1])
@@ -73,7 +76,7 @@ node_type_chance = .7 #best yet: .7
 mutation_type_chance_leaf = .15 #best yet: .15
 mutation_type_chance_fork = .1 #best yet: .1
 #fitness_ratio = 2 #ratio of max fitness to median fitness (or mean)
-def evolve(gen=600, population=None, pop=50):
+def evolve(gen=2000, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
 		r = fp.region2()
@@ -94,7 +97,7 @@ def evolve(gen=600, population=None, pop=50):
 	for generation in range(gen):
 		#generating new data for each generation helps encourage
 		#a healthy genetic variation
-		numbers, classes = generate_data(2000)
+		numbers, classes = generate_data()
 	
 		#evaluate ferns
 		pop_fitness = np.array([0.0]*pop)
@@ -132,6 +135,14 @@ def evolve(gen=600, population=None, pop=50):
 				new_population[-1].mutate()
 		
 		population = new_population
+	
+	h = .1*np.array(range(-30, 30))
+	theta = path(h)
+	plot.figure()
+	plot.plot(theta, h)
+	plot.show()
+	
+	fplt.plot( population[max_fitness_index] )
 	
 	plot.figure()
 	plot.plot(range(gen), max_fitness, '+', color='green') #plot fitness progression

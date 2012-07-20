@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plot
 import scipy as sp #for argmax
 from math import log
+import fernplot as fplt
 
 def random_seed(n):
 	rand.seed(n)
@@ -115,6 +116,8 @@ def evolve(gen=600, population=None, pop=50):
 				new_population[-1].mutate()
 		
 		population = new_population
+	
+	fplt.plot( population[max_fitness_index] )
 	
 	plot.figure()
 	plot.plot(range(gen), max_fitness, '+', color='green') #plot fitness progression
