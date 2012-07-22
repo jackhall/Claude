@@ -361,7 +361,7 @@ namespace clau {
 						     random_int(fern->generator) };
 			return split_leaf(new_division); //performs ghost check
 			
-		} else return merge_fork(); //performs root, ghost and child checks
+		} else return merge_fork(); //performs root, ghost and child checks //update: no child check
 	}
 	
 	template<dim_type D>
@@ -462,37 +462,37 @@ namespace clau {
 		// or if fork is a ghost or root
 		if( !current->leaf && !is_root() ) {
 			auto fork_ptr = static_cast<Fork*>(current);
-			if(fork_ptr->left->leaf && fork_ptr->right->leaf) {
+			//if(fork_ptr->left->leaf && fork_ptr->right->leaf) {
 			
-				//either keep bin of _larger interval_ or left leaf 
-				bin_type kept_bin; 
-				if(fork_ptr->value.bit) kept_bin = static_cast<Leaf*>(fork_ptr->left)->bin;
-				else kept_bin = static_cast<Leaf*>(fork_ptr->right)->bin;
+			//either keep bin of _larger interval_ or left leaf 
+			bin_type kept_bin; 
+			if(fork_ptr->value.bit) kept_bin = static_cast<Leaf*>(fork_ptr->left)->bin;
+			else kept_bin = static_cast<Leaf*>(fork_ptr->right)->bin;
+			
+			up();
+			auto parent_ptr = static_cast<Fork*>(current); 
+			if( parent_ptr->left == fork_ptr ) {
+			
+				delete fork_ptr;
+				fork_ptr = nullptr;
+				parent_ptr->left = new Leaf(parent_ptr, kept_bin);
+				left();
+				return true;
 				
-				up();
-				auto parent_ptr = static_cast<Fork*>(current); 
-				if( parent_ptr->left == fork_ptr ) {
+			} else if( parent_ptr->right == fork_ptr) {
+			
+				delete fork_ptr;
+				fork_ptr = nullptr;
+				parent_ptr->right = new Leaf(parent_ptr, kept_bin);
+				right();
+				return true;
 				
-					delete fork_ptr;
-					fork_ptr = nullptr;
-					parent_ptr->left = new Leaf(parent_ptr, kept_bin);
-					left();
-					return true;
-					
-				} else if( parent_ptr->right == fork_ptr) {
+			} else {
+				current = fork_ptr; //return to original node
+				return false; //fork is a ghost
+			}
 				
-					delete fork_ptr;
-					fork_ptr = nullptr;
-					parent_ptr->right = new Leaf(parent_ptr, kept_bin);
-					right();
-					return true;
-					
-				} else {
-					current = fork_ptr; //return to original node
-					return false; //fork is a ghost
-				}
-				
-			} else return false; //both children are not leaves
+			//} else return false; //both children are not leaves
 		} else return false; //current points to a leaf or root
 	}
 	

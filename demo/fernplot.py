@@ -113,10 +113,9 @@ def fernplot_test(dim=1):
 		
 	if dim is 2:
 		r = fp.region2()
-		r.set_uniform(fp.interval(1.0, 3.0))
+		r.set_uniform(fp.interval(-300.0, 300.0))
 		f = fp.fern2(r, 3)
-		for i in range(50):
-			f.mutate()
+		f.randomize(50)
 		print f
 		plot(f)
 

@@ -17,8 +17,8 @@ def random_seed(n):
 
 ##### ode ######
 thrust = .5;
-J = 100
-h0 = 2 #range of random initial h is [-h0, h0]
+J = 100.0
+h0 = 2.0 #range of random initial h is [-h0, h0]
 
 def path(h):
 	"""represents optimal return path and decision boundary"""
@@ -36,7 +36,7 @@ def roll(y):
 def random_state():
 	"""generate random initial condition"""
 	theta = rand.random()*2*pi - pi #between -pi and pi rad
-	h = 0.0 #(rand.random()*2 - 1)*h0	
+	h = (rand.random()*2 - 1)*h0	
 	return [theta, h]
 
 class OptimalController:
@@ -176,7 +176,7 @@ def simulate(t_final, dt, control=None, state0=None):
 momentum_weight = .2;
 def fitness(individual, state0):
 	"""procedure to compute evolutionary fitness from a simulation"""
-	#simulate
+	#simulate, maybe start out with static i.c. and anneal to random ones
 	total_error = 0.0;
 	for i in state0: 
 		results, time = simulate(100, 10, individual, i)
@@ -286,6 +286,7 @@ def evolve(gen=200, population=None, pop=50):
 		population = new_population
 			
 	##### plots ########
+	print population[0].get_bounds(1), population[0].get_bounds(2)
 	fplt.plot( population[max_fitness_index] )
 	#print population[max_fitness_index]
 	
