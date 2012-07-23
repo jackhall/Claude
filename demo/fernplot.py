@@ -86,8 +86,8 @@ def plot(fern):
 			xint, yint = it.region[0], it.region[1]
 			x = round((xint.lower-xmin) * scale[0]), \
 			    round((xint.upper-xmin) * scale[0])
-			y = round((yint.lower-xmin) * scale[1]), \
-			    round((yint.upper-xmin) * scale[1])
+			y = round((yint.lower-ymin) * scale[1]), \
+			    round((yint.upper-ymin) * scale[1])
 			canvas.create_rectangle(x[0], y[0], x[1], y[1],
 						fill=colors[it.node.get_leaf_bin()])
 			#print colors[it.node.get_leaf_bin()]

@@ -12,8 +12,8 @@ def random_seed(n):
 	rand.seed(n)
 
 thrust = .5;
-J = 100
-h0 = 2 #range of random initial h is [-h0, h0]
+J = 100.0
+h0 = 2.0 #range of random initial h is [-h0, h0]
 
 def path(h):
 	"""represents optimal return path and decision boundary"""
@@ -21,8 +21,9 @@ def path(h):
 
 def generate_data(n=1000):
 	"""generate distributions and classify them"""
-	h = np.random.uniform(-pi, pi, n)
-	theta = path(h) + np.random.normal(0.0, 0.5, n)
+	h = np.random.uniform(-50.0, 50.0, n)
+	theta = np.random.uniform(-pi, pi, n)
+	#theta = path(h) + np.random.normal(0.0, 0.5, n)
 	numbers = np.vstack((theta, h)).T
 	classes = [0]*n
 	for index, number in enumerate(numbers):
@@ -80,6 +81,7 @@ def evolve(gen=500, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
 		r = fp.region2()
+		r[0], r[1] = fp.interval(-pi, pi), fp.interval(-50.0, 50.0)
 		r.set_uniform( fp.interval(-pi, pi) )
 		population = [fp.fern2(r, 3) for i in range(pop)]
 		randomize=True
@@ -95,6 +97,9 @@ def evolve(gen=500, population=None, pop=50):
 	if randomize:
 		for index, individual in enumerate(population):
 			population[index].randomize(500)
+	#else:
+	#	for index, individual in enumerate(population):
+	#		population[index].randomize(50)
 	
 	max_fitness = [0]*gen
 	median_fitness = [0]*gen
@@ -142,10 +147,12 @@ def evolve(gen=500, population=None, pop=50):
 		
 		population = new_population
 	
-	h = .1*np.array(range(-30, 30))
+	h = 1.0*np.array(range(-50, 50))
 	theta = path(h)
 	plot.figure()
 	plot.plot(theta, h)
+	a = plot.gca()
+	a.set_xlim([-pi, pi])
 	plot.show()
 	
 	fplt.plot( population[max_fitness_index] )
@@ -157,3 +164,4 @@ def evolve(gen=500, population=None, pop=50):
 	plot.show()
 	
 	return population
+	

@@ -212,15 +212,15 @@ namespace {
 		ExpandFern();
 		
 		//merge 2nd and 3rd leaves, preserving 3rd leaf's bin
-		node.left().right();
-		node.merge_fork();
+		auto bin = node.left().right().right().get_leaf_bin();
+		node.up().merge_fork(bin);
 		EXPECT_FALSE(node.is_ghost());
 		EXPECT_FALSE(node.is_root());
 		EXPECT_TRUE(node.is_leaf());
 		EXPECT_EQ(0, node.get_leaf_bin());
 		
 		//merge 1st and 2nd leaves, preserving 1st leaf's bin
-		node.up().merge_fork();
+		node.up().merge_fork(1);
 		EXPECT_EQ(1, node.get_leaf_bin());
 	}
 	

@@ -219,14 +219,14 @@ def median(sequence):
 mutation_rate = .4 #best yet: .4
 crossover_rate = .05 #best yet: .05
 node_type_chance = .85 #best yet: .8
-mutation_type_chance_leaf = .15 #best yet: .15
+mutation_type_chance_leaf = .25 #best yet: .15
 mutation_type_chance_fork = .1 #best yet: .1
 #fitness_ratio = 3 #ratio of max fitness to median fitness (or mean)
 def evolve(gen=200, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
 		r = fp.region2()
-		r[0], r[1] = fp.interval(-4*pi, 4*pi), fp.interval(-2.0*J, 2.0*J)
+		r[0], r[1] = fp.interval(-4*pi, 4*pi), fp.interval(-50.0, 50.0)
 		population = [fp.fern2(r, 3) for i in range(pop)]
 		randomize = True
 	else:
@@ -238,9 +238,9 @@ def evolve(gen=200, population=None, pop=50):
 		population[index].set_mutation_type_chance(mutation_type_chance_fork, 
 							   mutation_type_chance_leaf)
 	
-	if randomize:
-		for index, individual in enumerate(population):
-			population[index].randomize(200)
+	#if randomize:
+	#	for index, individual in enumerate(population):
+	#		population[index].randomize(50)
 	
 	max_fitness = [0]*gen
 	median_fitness = [0]*gen
@@ -286,7 +286,6 @@ def evolve(gen=200, population=None, pop=50):
 		population = new_population
 			
 	##### plots ########
-	print population[0].get_bounds(1), population[0].get_bounds(2)
 	fplt.plot( population[max_fitness_index] )
 	#print population[max_fitness_index]
 	

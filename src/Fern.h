@@ -325,7 +325,7 @@ namespace clau {
 			bool set_leaf_bin(const bin_type new_bin);
 			bin_type get_max_bin() const { return fern->max_bin; }
 			
-			bool merge_fork();
+			bool merge_fork(const bin_type kept_bin);
 			num_type get_fork_boundary() const;
 			dim_type get_fork_dimension() const;
 			bool set_fork_dimension(const dim_type new_dimension);

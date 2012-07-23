@@ -361,7 +361,13 @@ namespace clau {
 						     random_int(fern->generator) };
 			return split_leaf(new_division); //performs ghost check
 			
-		} else return merge_fork(); //performs root, ghost and child checks //update: no child check
+		} else {
+		
+			std::uniform_int_distribution<bin_type> random_int(0, fern->max_bin);
+			//performs root, ghost and child checks: //update: no child check
+			return merge_fork( random_int(fern->generator) ); 
+		
+		}
 	}
 	
 	template<dim_type D>
@@ -457,7 +463,7 @@ namespace clau {
 	}
 	
 	template<dim_type D>
-	bool Fern<D>::node_handle::merge_fork() {
+	bool Fern<D>::node_handle::merge_fork(const bin_type kept_bin) {
 		//returns false for leaves, if both children are not leaves,
 		// or if fork is a ghost or root
 		if( !current->leaf && !is_root() ) {
@@ -465,9 +471,9 @@ namespace clau {
 			//if(fork_ptr->left->leaf && fork_ptr->right->leaf) {
 			
 			//either keep bin of _larger interval_ or left leaf 
-			bin_type kept_bin; 
-			if(fork_ptr->value.bit) kept_bin = static_cast<Leaf*>(fork_ptr->left)->bin;
-			else kept_bin = static_cast<Leaf*>(fork_ptr->right)->bin;
+			//bin_type kept_bin;
+			//if(fork_ptr->value.bit) kept_bin = static_cast<Leaf*>(fork_ptr->left)->bin;
+			//else kept_bin = static_cast<Leaf*>(fork_ptr->right)->bin;
 			
 			up();
 			auto parent_ptr = static_cast<Fork*>(current); 
