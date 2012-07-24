@@ -329,11 +329,22 @@ def plot_phase(control=None, state0 = None):
 	#optimal path mode
 	h = np.linspace(-hmax, hmax, 100)
 	plot.plot(path(h), h, color='blue') #use polar(theta, h)?
+	if control is None:
+		plot.savefig("optimal-satellite-cart.png", dpi=200)
+	else:
+		plot.savefig("satellite-nonoptimal-cart.png", dpi=200)
+	plot.xlabel("angle (rad)")
+	plot.ylabel("angular momentum (N-m-s)")
 	
 	#optimal mode in polar
 	plot.figure(2)
 	plot.polar(path(h), h, color='blue')
 	plot.show()
-	#plot.savefig("satellite-phase.png", dpi=200)
+	if control is None:
+		plot.savefig("optimal-satellite-polar.png", dpi=200)
+	else:
+		plot.savefit("satellite-nonoptimal-polar.png", dpi=200)
+	plot.xlabel("angle (rad)")
+	plot.ylabel("angular momentum (N-m-s)")
 	
 	
