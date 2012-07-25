@@ -1,5 +1,5 @@
 import fernpy as fp
-from math import * #for pi
+import math #for pi
 import numpy as np 
 import matplotlib.pyplot as plot
 import scipy as sp #for argmax
@@ -9,6 +9,7 @@ import random as rand
 import sys #for printing
 import time #for time limit on simulations and pausing
 import fernplot as fplt
+import pp
 
 #rand.seed(3) #call with no arguments for true randomness
 
@@ -27,15 +28,15 @@ def path(h):
 def roll(y):
 	"""takes care of angle roll-over"""
 	theta = y[0]
-	if abs(theta) > pi:
-		theta %= 2*pi
-		if theta > pi:
-			theta -= 2*pi
+	if abs(theta) > math.pi:
+		theta %= 2*math.pi
+		if theta > math.pi:
+			theta -= 2*math.pi
 	return [theta, y[1]]
 
 def random_state():
 	"""generate random initial condition"""
-	theta = rand.random()*2*pi - pi #between -pi and pi rad
+	theta = rand.random()*2*math.pi - math.pi #between -pi and pi rad
 	h = (rand.random()*2 - 1)*h0	
 	return [theta, h]
 
@@ -103,10 +104,10 @@ def simulate(t_final, dt, control=None, state0=None):
 	state_tolerance = .01
 	
 	y_out, t_out = [], []
-	solver = spint.ode(fblank).set_integrator('vode', method='adams', with_jacobian=False) 
+	solver = spint.ode(fblank).set_integrator('dopri5') #vode cannot run in parallel
 	solver.set_initial_value(state0, 0.0) #thinks state0 has only one number in it?
 	p = fp.point2()
-	max_time = time.clock() + 0.1
+	max_time = time.clock() + 0.1 
 	while solver.t < t_final and solver.successful():
 		
 		#select a control mode by setting torque
@@ -226,7 +227,7 @@ def evolve(gen=200, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
 		r = fp.region2()
-		r[0], r[1] = fp.interval(-4*pi, 4*pi), fp.interval(-50.0, 50.0)
+		r[0], r[1] = fp.interval(-4*math.pi, 4*math.pi), fp.interval(-50.0, 50.0)
 		population = [fp.fern2(r, 3) for i in range(pop)]
 		randomize = True
 	else:
@@ -242,18 +243,32 @@ def evolve(gen=200, population=None, pop=50):
 	#	for index, individual in enumerate(population):
 	#		population[index].randomize(50)
 	
+	job_server = pp.Server(ppservers=())
+	jobs = []
+	subfuncs = (simulate, fblank, dtheta)
+	packages = ("time", "sp", "spint", "np", "math", "fp")
+	
 	max_fitness = [0]*gen
 	median_fitness = [0]*gen
+	state0 = [random_state() for i in range(5)] #5 simulations per evaluation
 	
 	for generation in range(gen):
-		state0 = [random_state() for i in range(5)] #5 simulations per evaluation
+		#state0 = [random_state() for i in range(5)] #5 simulations per evaluation
 		optimal_fitness = fitness(OptimalController(), state0)
 	
 		#evaluate ferns
 		pop_fitness = np.array([0.0]*pop)
 		#state0 = [random_state() for i in range(10)] #simulations per evaluation
 		for index, individual in enumerate(population):
-			pop_fitness[index] = fitness(individual, state0) / optimal_fitness
+			if len(jobs) < gen: #only happens in first generation
+				jobs.append(job_server.submit(fitness, (individual, state0),
+							      subfuncs, packages))
+			else:
+			 	jobs[index] = job_server.submit(fitness, (individual, state0),
+							        subfuncs, packages)
+		
+		for index, result in enumerate(jobs):
+			pop_fitness[index] = result() / optimal_fitness
 		
 		#record and then normalize fitness
 		max_fitness_index = sp.argmax(pop_fitness)
@@ -339,12 +354,12 @@ def plot_phase(control=None, state0 = None):
 	#optimal mode in polar
 	plot.figure(2)
 	plot.polar(path(h), h, color='blue')
-	plot.show()
 	if control is None:
 		plot.savefig("optimal-satellite-polar.png", dpi=200)
 	else:
-		plot.savefit("satellite-nonoptimal-polar.png", dpi=200)
+		plot.savefig("satellite-nonoptimal-polar.png", dpi=200)
 	plot.xlabel("angle (rad)")
 	plot.ylabel("angular momentum (N-m-s)")
+	plot.show()
 	
 	

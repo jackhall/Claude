@@ -6,6 +6,7 @@ import matplotlib.pyplot as plot
 import scipy as sp #for argmax
 from math import log
 import fernplot as fplt
+import pp
 
 def random_seed(n):
 	rand.seed(n)
@@ -74,6 +75,11 @@ def evolve(gen=200, population=None, pop=50):
 							   mutation_type_chance_leaf)
 		population[index].randomize(15)
 	
+	job_server = pp.Server(ppservers=())
+	jobs = []
+	subfuncs = ()
+	packages = ("np", "fp",)
+	
 	max_fitness = [0]*gen
 	median_fitness = [0]*gen
 	min_fitness = [0]*gen
@@ -86,7 +92,17 @@ def evolve(gen=200, population=None, pop=50):
 		#evaluate ferns
 		pop_fitness = np.array([0.0]*pop)
 		for index, individual in enumerate(population):
-			pop_fitness[index] = fitness(individual, numbers, classes)
+			if len(jobs) < gen: #only happens in first generation
+				jobs.append(job_server.submit(fitness, 
+							      (individual, numbers, classes,),
+							      subfuncs, packages))
+			else:
+			 	jobs[index] = job_server.submit(fitness, 
+			 					(individual, numbers, classes,),
+							        subfuncs, packages)
+		
+		for index, result in enumerate(jobs):
+			pop_fitness[index] = result()
 		
 		#record and then normalize fitness
 		max_fitness_index = sp.argmax(pop_fitness)
