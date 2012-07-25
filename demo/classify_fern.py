@@ -91,15 +91,16 @@ def evolve(gen=200, population=None, pop=50):
 	
 		#evaluate ferns
 		pop_fitness = np.array([0.0]*pop)
-		for index, individual in enumerate(population):
-			if len(jobs) < gen: #only happens in first generation
+		if len(jobs) < pop:
+			for index, individual in enumerate(population):
 				jobs.append(job_server.submit(fitness, 
-							      (individual, numbers, classes,),
+							      (individual, numbers, classes,), 
 							      subfuncs, packages))
-			else:
+		else:
+			for index, individual in enumerate(population):
 			 	jobs[index] = job_server.submit(fitness, 
-			 					(individual, numbers, classes,),
-							        subfuncs, packages)
+			 					(individual, numbers, classes,), 
+			 					subfuncs, packages)
 		
 		for index, result in enumerate(jobs):
 			pop_fitness[index] = result()

@@ -260,7 +260,7 @@ def evolve(gen=200, population=None, pop=50):
 		pop_fitness = np.array([0.0]*pop)
 		#state0 = [random_state() for i in range(10)] #simulations per evaluation
 		for index, individual in enumerate(population):
-			if len(jobs) < gen: #only happens in first generation
+			if len(jobs) < pop: #only happens in first generation
 				jobs.append(job_server.submit(fitness, (individual, state0),
 							      subfuncs, packages))
 			else:
