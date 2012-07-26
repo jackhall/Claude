@@ -19,6 +19,7 @@
 */
 
 #include <boost/python.hpp>
+#include <string>
 #include "Fern.h"
 
 /*
@@ -59,6 +60,42 @@ struct std_item { //helper class for Point and Region
 		else IndexError();
     	}
 };
+
+/*
+struct pyInterval : public Interval, boost::python::pickle_suite { 
+
+	static boost::python::tuple getinitargs(const pyInterval& x) {
+		return boost::python::make_tuple
+	}
+
+	//static boost::python::tuple getstate(const pyInterval& x) {
+		//in save() method: encode
+	//}
+
+	//static void setstate(pyInterval& x, boost::python::tuple state) {
+		//translate data from tuple
+		//in load() method: 
+	//}
+};
+
+template<class T>
+struct std_pickle : boost::python::pickle_suite { //helper class for pickling
+	static boost::python::tuple getinitargs(const T& x) {
+		return boost::python::make_tuple(); //all classes must be default-constructible
+	}
+
+	static boost::python::tuple getstate(const T& x) {
+		//in save() method: encode all data in a string
+		return boost::python::make_tuple(x.save());
+	}
+
+	static void setstate(T& x, boost::python::tuple state) {
+		//extract data from tuple (only one element, which is a string)
+		auto data( boost::python::extract<std::string>(state[0]) );
+		x.load(data); //reconstruct object from string
+	}
+}
+*/
 /*
 template<class T>
 inline PyObject * managingPyObject(T *p) {

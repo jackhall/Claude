@@ -28,6 +28,15 @@
 
 namespace {
 
+	TEST(HelperClasses, Interval) {
+		using namespace clau;
+		Interval one(1.2345, 6.78901);
+		std::string data(one.save());
+		Interval two;
+		two.load(data);
+		EXPECT_EQ(one, two);
+	}
+
 	TEST(ConstructionTests, DefaultConstruction) {
 		using namespace clau;
 		Fern<1> fern;

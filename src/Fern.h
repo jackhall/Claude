@@ -26,6 +26,8 @@
 #include <vector>
 #include <array>
 #include <iostream>
+#include <string>
+#include <sstream>
 
 namespace clau {
 	
@@ -46,6 +48,15 @@ namespace clau {
 		bool operator!=(const Interval& rhs) const { return !(*this==rhs); }
 		
 		num_type span() const { return upper - lower; }
+		std::string save() const {
+			std::stringstream convert;
+			convert << lower << upper;
+			return convert.str();
+		}
+		void load(std::string data) {
+			std::stringstream convert(data);
+			convert >> lower >> upper;
+		}
 		
 		friend std::ostream& operator<<(std::ostream& out, const Interval& interval);
 	};
