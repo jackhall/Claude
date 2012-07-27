@@ -36,6 +36,40 @@ namespace {
 		two.load(data);
 		EXPECT_EQ(one, two);
 	}
+	
+	TEST(HelperClasses, Division) {
+		using namespace clau;
+		Division<2> one(true, 2);
+		std::string data(one.save());
+		Division<2> two;
+		two.load(data);
+		EXPECT_EQ(one, two);
+	}
+
+	TEST(HelperClasses, Region) {
+		using namespace clau;
+		Region<3> one;
+		Interval i(1.3579, 2.4680), j(3.5791, 4.6802), k(5.7913, 6.8024);
+		one(1) = i;
+		one(2) = j;
+		one(3) = k;
+		std::string data(one.save());
+		Region<3> two;
+		two.load(data);
+		EXPECT_EQ(one, two);
+	}
+
+	TEST(HelperClasses, Point) {
+		using namespace clau;
+		Point<3> one;
+		one(1) = 9.7531;
+		one(2) = 8.6420;
+		one(3) = 7.5319;
+		std::string data(one.save());
+		Point<3> two;
+		two.load(data);
+		EXPECT_EQ(one, two);
+	}
 
 	TEST(ConstructionTests, DefaultConstruction) {
 		using namespace clau;

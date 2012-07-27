@@ -49,9 +49,10 @@ namespace clau {
 		
 		num_type span() const { return upper - lower; }
 		std::string save() const {
-			std::stringstream convert;
-			convert << lower << upper;
-			return convert.str();
+			std::stringstream convert_lower, convert_upper;
+			convert_lower << lower;
+			convert_upper << upper;
+			return convert_lower.str() + " " + convert_upper.str();
 		}
 		void load(std::string data) {
 			std::stringstream convert(data);
@@ -74,7 +75,32 @@ namespace clau {
 		Division() : bit(false), dimension(1) {}
 		Division(const bool bBit, const dim_type dim=1) : bit(bBit), dimension(dim) 
 			{ if(dim <= 0 || dim > D) dimension = 1; }
+		
+		bool operator==(const Division<D>& rhs) const 
+			{ return !(bit xor rhs.bit) && (dimension == rhs.dimension); }
+		bool operator!=(const Division<D>& rhs) const { return !(*this==rhs); } 
+		
+		std::string save() const {
+			std::stringstream convert_dimension;
+			convert_dimension << dimension;
+			std::string empty;
+			if(bit) return empty + "1 " + convert_dimension.str();
+			else return empty + "0 " + convert_dimension.str();
+		}
+		void load(std::string data) {
+			std::stringstream convert(data);
+			convert >> bit >> dimension;
+		}
+		
+		template<dim_type T>
+		friend std::ostream& operator<<(std::ostream& out, const Division<T>& division);
 	};
+	
+	template<dim_type T>
+	std::ostream& operator<<(std::ostream& out, const Division<T>& division) {
+		out << "{" << division.bit << ", " << division.dimension << "}";
+		return out;
+	}
 	
 	template<dim_type D>
 	class Region {
@@ -128,6 +154,16 @@ namespace clau {
 			else interval.upper = interval.lower + new_span;
 		}
 		
+		std::string save() const {
+			std::string data;
+			for(int i=0; i<D; ++i) data += limits[i].save() + " ";
+			return data;
+		}
+		void load(std::string data) {
+			std::stringstream convert(data);
+			//violates encapsulation of Interval, but Intervals are structs anyway
+			for(int i=0; i<D; ++i) convert >> limits[i].lower >> limits[i].upper;
+		}
 	};
 	
 	template<dim_type T>
@@ -162,6 +198,16 @@ namespace clau {
 		const num_type& operator()(const dim_type dimension) const 
 			{ return coordinates[dimension-1]; }
 		dim_type size() const { return D; }
+		
+		std::string save() const {
+			std::stringstream convert;
+			for(int i=0; i<D; ++i) convert << coordinates[i] << " ";
+			return convert.str();
+		}
+		void load(std::string data) {
+			std::stringstream convert(data);
+			for(int i=0; i<D; ++i) convert >> coordinates[i];
+		}
 	};
 	
 	template<dim_type T>
