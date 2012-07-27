@@ -173,6 +173,10 @@ namespace clau {
 	}
 	
 	template<dim_type D>
+	Fern<D>::Fork::Fork(Fork* pParent, const Division<D> cValue) 
+		: Node(pParent, false), value(cValue), left(nullptr), right(nullptr) {}
+	
+	template<dim_type D>
 	Fern<D>::Fork::Fork(const Fork& rhs) 
 		: Node(rhs.parent, false), value(rhs.value), boundary(rhs.boundary) {
 		//copy left subtree

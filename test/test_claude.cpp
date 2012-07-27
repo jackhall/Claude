@@ -421,7 +421,16 @@ namespace {
 		fern = fern2;
 		EXPECT_TRUE(CheckEqual(fern, fern2));
 	}
-	
+	/*
+	TEST_F(FernTest, Pickling) {
+		using namespace clau;
+		ExpandFern();
+		
+		//need boost.python tuples for this test
+		//comment this test out if you don't care about pickling
+		//maybe test this in python instead, but would need to overload Fern::operator==
+	}
+	*/
 	//write CheckValid() to check random operations?
 	//check for randomness?
 	

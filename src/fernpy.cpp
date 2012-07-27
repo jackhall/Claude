@@ -77,7 +77,7 @@ struct pyInterval : public Interval, boost::python::pickle_suite {
 		//in load() method: 
 	//}
 };
-
+*/
 template<class T>
 struct std_pickle : boost::python::pickle_suite { //helper class for pickling
 	static boost::python::tuple getinitargs(const T& x) {
@@ -91,11 +91,93 @@ struct std_pickle : boost::python::pickle_suite { //helper class for pickling
 
 	static void setstate(T& x, boost::python::tuple state) {
 		//extract data from tuple (only one element, which is a string)
-		auto data( boost::python::extract<std::string>(state[0]) );
+		std::string data = boost::python::extract<std::string>(state[0]);
 		x.load(data); //reconstruct object from string
 	}
-}
-*/
+};
+
+template<clau::dim_type D>
+struct fern_pickle : boost::python::pickle_suite {
+	static boost::python::tuple getinitargs(const clau::Fern<D>& x) {
+		return boost::python::make_tuple();
+	}
+	
+	static boost::python::tuple getstate(const clau::Fern<D>& x) {
+		auto regionstr = x.root_region.save();
+		auto binnum = x.max_bin;
+		auto nchance = x.node_type_chance;
+		auto mchancef = x.mutation_type_chance_fork;
+		auto mchancel = x.mutation_type_chance_leaf;
+		auto roottuple = savenode(x.root);
+
+		return boost::python::make_tuple(regionstr, binnum, nchance, 
+						 mchancef, mchancel, roottuple);
+	}
+	
+	static void setstate(clau::Fern<D>& x, boost::python::tuple state) {
+		using namespace boost::python;
+		using namespace std;
+		
+		string regionstr = extract<string>(state[0]);
+		x.root_region.load(regionstr);
+		x.max_bin = extract<bin_type>(state[1]);
+		x.node_type_chance = extract<float>(state[2]);
+		x.mutation_type_chance_fork = extract<float>(state[3]);
+		x.mutation_type_chance_leaf = extract<float>(state[4]);
+		
+		delete x.root;
+		tuple roottuple = extract<tuple>(state[5]);
+		x.root = constructnode(roottuple);
+		x.update_boundary();
+	}
+	
+private:
+	static boost::python::tuple savenode(clau::Fern<D>::Fork* fork_ptr) { //clau::Fern<D>::Fork not recognized as type?
+		using namespace clau;
+		using namespace boost::python;
+		
+		auto divisionstr = x.value.save();
+		
+		tuple lefttuple;
+		if( fork_ptr->left->is_leaf() )
+			lefttuple = make_tuple(true, static_cast<Leaf*>(fork_ptr->left)->bin);
+		else 	lefttuple = savenode( static_cast<Fork*>(fork_ptr->left) );
+		
+		tuple righttuple;
+		if( fork_ptr->right->is_leaf() )
+			righttuple = make_tuple(true, static_cast<Leaf*>(fork_ptr->right)->bin);
+		else	righttuple = savenode( static_cast<Fork*>(fork_ptr->right) );
+			
+		
+		return make_tuple(false, divisionstr, lefttuple, righttuple);
+	}
+	
+	static clau::Fern<D>::Fork* constructnode(clau::Fern<D>::Fork* parent_ptr, boost::python::tuple state) {
+		using namespace clau;
+		using namespace boost::python;
+		
+		Division<D> division;
+		std::string divisionstr = extract<std::string>(state[1]);
+		division.load(divisionstr);
+		
+		auto fork_ptr = new Fern<D>::Fork(parent_ptr, division);
+		
+		tuple lefttuple extract<tuple>(state[2]);
+		if( extract<bool>(lefttuple[0] ) {
+			bin_type leftbin = extract<bin_type>(lefttuple[1]);
+			fork_ptr->left = new Fern<D>::Leaf(fork_ptr, leftbin);
+		} else fork_ptr->left = constructnode(fork_ptr, lefttuple);
+		
+		tuple righttuple extract<tuple>(state[3]);
+		if( extract<bool>(righttuple[0] ) {
+			bin_type rightbin = extract<bin_type>(righttuple[1]);
+			fork_ptr->right = new Fern<D>::Leaf(fork_ptr, rightbin);
+		} else fork_ptr->right = constructnode(fork_ptr, righttuple);
+		
+		return fork_ptr;
+	}
+};
+
 /*
 template<class T>
 inline PyObject * managingPyObject(T *p) {
@@ -156,7 +238,8 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def("span", &Interval::span)
 		.def( self == self )
 		.def( self != self )
-		.def( self_ns::str(self) );
+		.def( self_ns::str(self) )
+		.def_pickle(std_pickle<Interval>());
 	
 	//////////////////////////////////////////////////////////////////////////
 	
@@ -171,7 +254,8 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def("__getitem__", &std_item< Region<1> >::get)
 		.def("__setitem__", &std_item< Region<1> >::set)
 		.def("split", &Region<1>::split)
-		.def("expand", &Region<1>::expand);
+		.def("expand", &Region<1>::expand)
+		.def_pickle(std_pickle< Region<1> >());
 	
 	class_< Point<1> >("point1")
 		.def( init<const Point<1>&>() )
@@ -181,7 +265,8 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def( self != self )
 		.def( self_ns::str(self) )
 		.def("__getitem__", &std_item< Point<1> >::get)
-		.def("__setitem__", &std_item< Point<1> >::set);
+		.def("__setitem__", &std_item< Point<1> >::set)
+		.def_pickle(std_pickle< Point<1> >());
 	
 	class_< Fern<1> >("fern1", init<bin_type>())
 		.def( init<Region<1>, bin_type>() )
@@ -202,7 +287,8 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def("crossover", &Fern<1>::crossover)
 		.def("query", &Fern<1>::query)
 		.def( self_ns::str(self) )
-		.def("begin", &Fern<1>::begin);
+		.def("begin", &Fern<1>::begin)
+		.def_pickle(fern_pickle<1>());
 	
 	class_< Division<1> >("division1")
 		.def( init<const Division<1>&>() )
@@ -210,7 +296,8 @@ BOOST_PYTHON_MODULE(fernpy) {
 		//.def("__deepcopy__", &std_deepcopy< Fern<DIM>::Division >)
 		.def( init<bool, dim_type>() )
 		.def_readwrite("bit", &Division<1>::bit)
-		.def_readwrite("dimension", &Division<1>::dimension);
+		.def_readwrite("dimension", &Division<1>::dimension)
+		.def_pickle(std_pickle< Division<1> >());
 	
 	class_< Fern<1>::node_handle >("node_handle1") 
 		.def( init<const Fern<1>::node_handle&>() )
@@ -257,7 +344,8 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def("__getitem__", &std_item< Region<2> >::get)
 		.def("__setitem__", &std_item< Region<2> >::set)
 		.def("split", &Region<2>::split)
-		.def("expand", &Region<2>::expand);
+		.def("expand", &Region<2>::expand)
+		.def_pickle(std_pickle< Region<2> >());
 	
 	class_< Point<2> >("point2")
 		.def( init<const Point<2>&>() )
@@ -267,7 +355,8 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def( self != self )
 		.def( self_ns::str(self) )
 		.def("__getitem__", &std_item< Point<2> >::get)
-		.def("__setitem__", &std_item< Point<2> >::set);
+		.def("__setitem__", &std_item< Point<2> >::set)
+		.def_pickle(std_pickle< Point<2> >());
 	
 	class_< Fern<2> >("fern2", init<bin_type>())
 		.def( init<Region<2>, bin_type>() )
@@ -288,7 +377,8 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def("crossover", &Fern<2>::crossover)
 		.def("query", &Fern<2>::query)
 		.def( self_ns::str(self) )
-		.def("begin", &Fern<2>::begin);
+		.def("begin", &Fern<2>::begin)
+		.def_pickle(fern_pickle<2>());
 	
 	class_< Division<2> >("division2")
 		.def( init<const Division<2>&>() )
@@ -296,7 +386,8 @@ BOOST_PYTHON_MODULE(fernpy) {
 		//.def("__deepcopy__", &std_deepcopy< Fern<DIM>::Division >)
 		.def( init<bool, dim_type>() )
 		.def_readwrite("bit", &Division<2>::bit)
-		.def_readwrite("dimension", &Division<2>::dimension);
+		.def_readwrite("dimension", &Division<2>::dimension)
+		.def_pickle(std_pickle< Division<2> >());
 	
 	class_< Fern<2>::node_handle >("node_handle2") 
 		.def( init<const Fern<2>::node_handle&>() )

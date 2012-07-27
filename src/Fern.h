@@ -161,7 +161,7 @@ namespace clau {
 		}
 		void load(std::string data) {
 			std::stringstream convert(data);
-			//violates encapsulation of Interval, but Intervals are structs anyway
+			//violates encapsulation of Interval, but Interval is a struct anyway
 			for(int i=0; i<D; ++i) convert >> limits[i].lower >> limits[i].upper;
 		}
 	};
@@ -275,6 +275,9 @@ namespace clau {
 			Division<D> value;
 			num_type boundary;
 			friend class node_handle;
+			template<dim_type T> friend struct fern_pickle;
+			
+			Fork(Fork* pParent, const Division<D> cValue);
 		
 		public:
 			Fork() = delete;
@@ -327,6 +330,8 @@ namespace clau {
 		
 		template<dim_type T>
 		friend std::ostream& operator<<(std::ostream& out, const Fern<T>& fern);
+		
+		template<dim_type T> friend struct fern_pickle;
 	
 		class node_handle {
 		/*
