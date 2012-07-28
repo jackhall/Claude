@@ -98,6 +98,56 @@ struct std_pickle : boost::python::pickle_suite { //helper class for pickling
 
 template<clau::dim_type D>
 struct fern_pickle : boost::python::pickle_suite {
+	static boost::python::tuple savenode(typename clau::Fern<D>::Fork* fork_ptr) { //clau::Fern<D>::Fork not recognized as type?
+		using namespace clau;
+		namespace bp = boost::python;
+		
+		//save division in this node
+		auto divisionstr = fork_ptr->value.save();
+		
+		//save left subtree
+		bp::tuple lefttuple;
+		if( fork_ptr->left->leaf )
+			lefttuple = bp::make_tuple(true, static_cast<typename Fern<D>::Leaf*>(fork_ptr->left)->bin);
+		else 	lefttuple = savenode( static_cast<typename Fern<D>::Fork*>(fork_ptr->left) );
+		
+		//save right subtree
+		bp::tuple righttuple;
+		if( fork_ptr->right->leaf )
+			righttuple = bp::make_tuple(true, static_cast<typename Fern<D>::Leaf*>(fork_ptr->right)->bin);
+		else	righttuple = savenode( static_cast<typename Fern<D>::Fork*>(fork_ptr->right) );
+			
+		return bp::make_tuple(false, divisionstr, lefttuple, righttuple);
+	}
+	
+	static typename clau::Fern<D>::Fork* constructnode(typename clau::Fern<D>::Fork* parent_ptr, boost::python::tuple state) {
+		using namespace clau;
+		using namespace boost::python;
+		
+		//load division for this node
+		Division<D> division;
+		std::string divisionstr = extract<std::string>(state[1]);
+		division.load(divisionstr);
+		
+		auto fork_ptr = new typename Fern<D>::Fork(parent_ptr, division);
+		
+		//reconstruct left subtree
+		tuple lefttuple = extract<tuple>(state[2]);
+		if( extract<bool>(lefttuple[0]) ) {
+			bin_type leftbin = extract<bin_type>(lefttuple[1]);
+			fork_ptr->left = new typename Fern<D>::Leaf(fork_ptr, leftbin);
+		} else fork_ptr->left = constructnode(fork_ptr, lefttuple);
+		
+		//reconstruct right subtree
+		tuple righttuple = extract<tuple>(state[3]);
+		if( extract<bool>(righttuple[0]) ) {
+			bin_type rightbin = extract<bin_type>(righttuple[1]);
+			fork_ptr->right = new typename Fern<D>::Leaf(fork_ptr, rightbin);
+		} else fork_ptr->right = constructnode(fork_ptr, righttuple);
+		
+		return fork_ptr;
+	}
+	
 	static boost::python::tuple getinitargs(const clau::Fern<D>& x) {
 		return boost::python::make_tuple();
 	}
@@ -116,65 +166,18 @@ struct fern_pickle : boost::python::pickle_suite {
 	
 	static void setstate(clau::Fern<D>& x, boost::python::tuple state) {
 		using namespace boost::python;
-		using namespace std;
 		
-		string regionstr = extract<string>(state[0]);
+		std::string regionstr = extract<std::string>(state[0]);
 		x.root_region.load(regionstr);
-		x.max_bin = extract<bin_type>(state[1]);
+		x.max_bin = extract<clau::bin_type>(state[1]);
 		x.node_type_chance = extract<float>(state[2]);
 		x.mutation_type_chance_fork = extract<float>(state[3]);
 		x.mutation_type_chance_leaf = extract<float>(state[4]);
 		
 		delete x.root;
 		tuple roottuple = extract<tuple>(state[5]);
-		x.root = constructnode(roottuple);
+		x.root = constructnode(nullptr, roottuple);
 		x.update_boundary();
-	}
-	
-private:
-	static boost::python::tuple savenode(clau::Fern<D>::Fork* fork_ptr) { //clau::Fern<D>::Fork not recognized as type?
-		using namespace clau;
-		using namespace boost::python;
-		
-		auto divisionstr = x.value.save();
-		
-		tuple lefttuple;
-		if( fork_ptr->left->is_leaf() )
-			lefttuple = make_tuple(true, static_cast<Leaf*>(fork_ptr->left)->bin);
-		else 	lefttuple = savenode( static_cast<Fork*>(fork_ptr->left) );
-		
-		tuple righttuple;
-		if( fork_ptr->right->is_leaf() )
-			righttuple = make_tuple(true, static_cast<Leaf*>(fork_ptr->right)->bin);
-		else	righttuple = savenode( static_cast<Fork*>(fork_ptr->right) );
-			
-		
-		return make_tuple(false, divisionstr, lefttuple, righttuple);
-	}
-	
-	static clau::Fern<D>::Fork* constructnode(clau::Fern<D>::Fork* parent_ptr, boost::python::tuple state) {
-		using namespace clau;
-		using namespace boost::python;
-		
-		Division<D> division;
-		std::string divisionstr = extract<std::string>(state[1]);
-		division.load(divisionstr);
-		
-		auto fork_ptr = new Fern<D>::Fork(parent_ptr, division);
-		
-		tuple lefttuple extract<tuple>(state[2]);
-		if( extract<bool>(lefttuple[0] ) {
-			bin_type leftbin = extract<bin_type>(lefttuple[1]);
-			fork_ptr->left = new Fern<D>::Leaf(fork_ptr, leftbin);
-		} else fork_ptr->left = constructnode(fork_ptr, lefttuple);
-		
-		tuple righttuple extract<tuple>(state[3]);
-		if( extract<bool>(righttuple[0] ) {
-			bin_type rightbin = extract<bin_type>(righttuple[1]);
-			fork_ptr->right = new Fern<D>::Leaf(fork_ptr, rightbin);
-		} else fork_ptr->right = constructnode(fork_ptr, righttuple);
-		
-		return fork_ptr;
 	}
 };
 

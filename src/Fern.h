@@ -250,6 +250,7 @@ namespace clau {
 		private:
 			bin_type bin;
 			friend class node_handle;
+			template<dim_type T> friend struct fern_pickle;
 		
 		public:
 			Leaf() = delete;
