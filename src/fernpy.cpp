@@ -100,7 +100,7 @@ template<clau::dim_type D>
 struct fern_pickle : boost::python::pickle_suite {
 	static boost::python::tuple savenode(typename clau::Fern<D>::Fork* fork_ptr) { //clau::Fern<D>::Fork not recognized as type?
 		using namespace clau;
-		namespace bp = boost::python;
+		namespace bp = boost::python; //needed to tell between std::tuple and bp::tuple
 		
 		//save division in this node
 		auto divisionstr = fork_ptr->value.save();
@@ -232,7 +232,7 @@ BOOST_PYTHON_MODULE(fernpy) {
 	//	.def("greet", &greet_class::greet);
 	
 	class_<Interval>("interval")
-		.def( init<num_type, num_type>() )
+		.def( init<const num_type, const num_type>() )
 		.def( init<const Interval&>() )
 		//.def("__copy__", &std_copy<Interval>)
 		//.def("__deepcopy", &std_deepcopy<Interval>)
@@ -271,8 +271,9 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def("__setitem__", &std_item< Point<1> >::set)
 		.def_pickle(std_pickle< Point<1> >());
 	
-	class_< Fern<1> >("fern1", init<bin_type>())
-		.def( init<Region<1>, bin_type>() )
+	class_< Fern<1> >("fern1")
+		.def( init<const bin_type>() )
+		.def( init<const Region<1>, const bin_type>() )
 		.def( init<const Fern<1>&>() )
 		//.def("__copy__", &std_copy< Fern<DIM> >)
 		//.def("__deepcopy__", &std_deepcopy< Fern<DIM> >)
@@ -361,8 +362,9 @@ BOOST_PYTHON_MODULE(fernpy) {
 		.def("__setitem__", &std_item< Point<2> >::set)
 		.def_pickle(std_pickle< Point<2> >());
 	
-	class_< Fern<2> >("fern2", init<bin_type>())
-		.def( init<Region<2>, bin_type>() )
+	class_< Fern<2> >("fern2")
+		.def( init<const bin_type>() )
+		.def( init<const Region<2>, const bin_type>() )
 		.def( init<const Fern<2>&>() )
 		//.def("__copy__", &std_copy< Fern<DIM> >)
 		//.def("__deepcopy__", &std_deepcopy< Fern<DIM> >)

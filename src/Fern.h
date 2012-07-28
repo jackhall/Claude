@@ -302,7 +302,8 @@ namespace clau {
 		void update_boundary() { root->update_boundary(root_region); }
 		
 	public:
-		explicit Fern(const bin_type numBins=1.0);
+		Fern();
+		explicit Fern(const bin_type numBins);
 		Fern(const Region<D> bounds, const bin_type numBins=1.0);
 		Fern(const Fern& rhs);
 		Fern& operator=(const Fern& rhs);

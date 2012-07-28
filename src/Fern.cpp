@@ -25,6 +25,9 @@ namespace clau {
 
 	//=================== Fern methods ======================
 	template<dim_type D>
+	Fern<D>::Fern() : Fern(1) {}
+	
+	template<dim_type D>
 	Fern<D>::Fern(const bin_type numBins) : root_region(), max_bin(numBins-1),
 						node_type_chance(0.6),
 						mutation_type_chance_leaf(0.25), 
