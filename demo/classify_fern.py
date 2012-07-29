@@ -1,7 +1,7 @@
-import fernpy as fp
+import fernpy
 import random as rand
 import sys #for printing
-import numpy as np
+import numpy
 import matplotlib.pyplot as plot
 import scipy as sp #for argmax
 from math import log
@@ -13,7 +13,7 @@ def random_seed(n):
 
 def generate_data(n=1000):
 	"""generate distributions and classify them"""
-	numbers = np.random.normal(0.0, 1.0, n)
+	numbers = numpy.random.normal(0.0, 1.0, n)
 	classes = [0]*n
 	for index, number in enumerate(numbers):
 		if number > 1.0:
@@ -26,7 +26,7 @@ def generate_data(n=1000):
 def fitness(individual, numbers, classes):
 	"""procedure to compute evolutionary fitness"""
 	correct = 0.0
-	p = fp.point1()
+	p = fernpy.point1()
 	for index, number in enumerate(numbers):
 		p[0] = number
 		if individual.query(p) == classes[index]:
@@ -61,9 +61,9 @@ mutation_type_chance_fork = .1 #best yet: .1
 def evolve(gen=200, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
-		r = fp.region1()
-		r.set_uniform( fp.interval(-3.0, 3.0) )
-		population = [fp.fern1(r, 2) for i in range(pop)]
+		r = fernpy.region1()
+		r.set_uniform( fernpy.interval(-3.0, 3.0) )
+		population = [fernpy.fern1(r, 2) for i in range(pop)]
 		randomize = True
 	else:
 		pop = len(population)
@@ -78,7 +78,7 @@ def evolve(gen=200, population=None, pop=50):
 	job_server = pp.Server(ppservers=())
 	jobs = []
 	subfuncs = ()
-	packages = ("np", "fp",)
+	packages = ("numpy", "fernpy",)
 	
 	max_fitness = [0]*gen
 	median_fitness = [0]*gen
@@ -90,7 +90,7 @@ def evolve(gen=200, population=None, pop=50):
 		numbers, classes = generate_data()
 	
 		#evaluate ferns
-		pop_fitness = np.array([0.0]*pop)
+		pop_fitness = numpy.array([0.0]*pop)
 		if len(jobs) < pop:
 			for index, individual in enumerate(population):
 				jobs.append(job_server.submit(fitness, 
@@ -112,7 +112,7 @@ def evolve(gen=200, population=None, pop=50):
 		min_fitness[generation] = min(pop_fitness)
 		
 		#control ratio of max to median fitness and normalize
-		#fitness_mean = np.mean(pop_fitness);
+		#fitness_mean = numpy.mean(pop_fitness);
 		#if max_fitness[generation] != fitness_mean: 
 		#	a = log(fitness_ratio) / (log(max_fitness[generation]) - log(fitness_mean))
 		#	pop_fitness = (pop_fitness - fitness_mean)**a + fitness_mean
@@ -129,7 +129,7 @@ def evolve(gen=200, population=None, pop=50):
 		new_population = []
 		new_population.append( population[max_fitness_index] ) #elitism
 		for i in range(1, pop):
-			new_population.append(fp.fern1( population[select(pop_fitness)] ))
+			new_population.append(fernpy.fern1( population[select(pop_fitness)] ))
 			if rand.random() < crossover_rate:
 				new_population[-1].crossover( population[select(pop_fitness)] ) 
 			if rand.random() < mutation_rate:

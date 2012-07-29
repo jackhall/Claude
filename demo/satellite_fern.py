@@ -1,11 +1,11 @@
-import fernpy as fp
+import fernpy
 import math #for pi
-import numpy as np 
+import numpy
 import matplotlib.pyplot as plot
-import scipy as sp #for argmax
-import scipy.integrate as spint
+import scipy #for argmax
+import scipy.integrate
 #from scipy.integrate import odeint
-import random as rand
+import random
 import sys #for printing
 import time #for time limit on simulations and pausing
 import fernplot as fplt
@@ -17,7 +17,7 @@ def random_seed(n):
 	rand.seed(n)
 
 ##### ode ######
-thrust = .5;
+thrust = .5; #can't be global variable, need to make it local for pp
 J = 100.0
 h0 = 2.0 #range of random initial h is [-h0, h0]
 
@@ -36,8 +36,8 @@ def roll(y):
 
 def random_state():
 	"""generate random initial condition"""
-	theta = rand.random()*2*math.pi - math.pi #between -pi and pi rad
-	h = (rand.random()*2 - 1)*h0	
+	theta = random.random()*2*math.pi - math.pi #between -pi and pi rad
+	h = (random.random()*2 - 1)*h0	
 	return [theta, h]
 
 class OptimalController:
@@ -58,13 +58,13 @@ class OptimalController:
 				mode = 0
 		return mode
 		
-def dh(theta, h, control=None):
+def dh(theta, h, control=None, thrust=.5):
 	"""computes the derivative of angular momentum (torque thrust)"""
 	if control is None:
 		control = OptimalController()
 	
-	p = fp.point2()
-	p[0], p[1] = roll([theta, h]) 
+	p = fernpy.point2()
+	#p[0], p[1] = roll([theta, h]) 
 	mode = control.query(p) 
 	if mode is 0:
 		torque = 0
@@ -93,7 +93,7 @@ def fblank(t, state, torque):
 	Dh = torque
 	return [Dtheta, Dh] #f2py weirdness requires a list instead of a tuple
 
-def simulate(t_final, dt, control=None, state0=None):
+def simulate(t_final, dt, control=None, state0=None, thrust=.5):
 	"""simulates a satellite (with event detection)"""
 	if control is None:
 		control = OptimalController()
@@ -104,9 +104,9 @@ def simulate(t_final, dt, control=None, state0=None):
 	state_tolerance = .01
 	
 	y_out, t_out = [], []
-	solver = spint.ode(fblank).set_integrator('dopri5') #vode cannot run in parallel
+	solver = scipy.integrate.ode(fblank).set_integrator('dopri5') #vode cannot run in parallel
 	solver.set_initial_value(state0, 0.0) #thinks state0 has only one number in it?
-	p = fp.point2()
+	p = fernpy.point2()
 	max_time = time.clock() + 0.1 
 	while solver.t < t_final and solver.successful():
 		
@@ -170,7 +170,7 @@ def simulate(t_final, dt, control=None, state0=None):
 		y_out.append(solver.y*1000)
 		t_out.append(t_final)
 	
-	return np.array(y_out), t_out
+	return numpy.array(y_out), t_out
 	
 
 ###### fitness evaluation #######
@@ -181,14 +181,14 @@ def fitness(individual, state0):
 	total_error = 0.0;
 	for i in state0: 
 		results, time = simulate(100, 10, individual, i)
-		total_error += spint.trapz(abs(results[:,0]), time)
-		total_error += spint.trapz(abs(results[:,1]), time)
+		total_error += scipy.integrate.trapz(abs(results[:,0]), time)
+		total_error += scipy.integrate.trapz(abs(results[:,1]), time)
 		#total_error += abs(results[-1,0])
 	return 3000.0/total_error 
 	
 def select(population_fitness):
 	"""randomly selects an element based on normalized fitnesses"""
-	choice = rand.random()
+	choice = random.random()
 	for index, fitness in enumerate(population_fitness):
 		if fitness > choice: 
 			return index
@@ -226,9 +226,9 @@ mutation_type_chance_fork = .1 #best yet: .1
 def evolve(gen=200, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
-		r = fp.region2()
-		r[0], r[1] = fp.interval(-4*math.pi, 4*math.pi), fp.interval(-50.0, 50.0)
-		population = [fp.fern2(r, 3) for i in range(pop)]
+		r = fernpy.region2()
+		r[0], r[1] = fernpy.interval(-4*math.pi, 4*math.pi), fernpy.interval(-50.0, 50.0)
+		population = [fernpy.fern2(r, 3) for i in range(pop)]
 		randomize = True
 	else:
 		pop = len(population)
@@ -246,7 +246,8 @@ def evolve(gen=200, population=None, pop=50):
 	job_server = pp.Server(ppservers=())
 	jobs = []
 	subfuncs = (simulate, fblank, dtheta)
-	packages = ("time", "sp", "spint", "np", "math", "fp")
+	packages = ("time", "scipy", "scipy.integrate", "numpy", "math", "fernpy")
+	template = pp.Template(job_server, fitness, subfuncs, packages)
 	
 	max_fitness = [0]*gen
 	median_fitness = [0]*gen
@@ -257,21 +258,19 @@ def evolve(gen=200, population=None, pop=50):
 		optimal_fitness = fitness(OptimalController(), state0)
 	
 		#evaluate ferns
-		pop_fitness = np.array([0.0]*pop)
+		pop_fitness = numpy.array([0.0]*pop)
 		#state0 = [random_state() for i in range(10)] #simulations per evaluation
 		for index, individual in enumerate(population):
 			if len(jobs) < pop: #only happens in first generation
-				jobs.append(job_server.submit(fitness, (individual, state0),
-							      subfuncs, packages))
+				jobs.append( template.submit(individual, state0) )
 			else:
-			 	jobs[index] = job_server.submit(fitness, (individual, state0),
-							        subfuncs, packages)
+			 	jobs[index] = template.submit(individual, state0)
 		
 		for index, result in enumerate(jobs):
-			pop_fitness[index] = result() / optimal_fitness
+			pop_fitness[index] = result() / optimal_fitness #result is None?
 		
 		#record and then normalize fitness
-		max_fitness_index = sp.argmax(pop_fitness)
+		max_fitness_index = scipy.argmax(pop_fitness)
 		max_fitness[generation] = pop_fitness[max_fitness_index]
 		median_fitness[generation] = median(pop_fitness)
 		
@@ -292,7 +291,7 @@ def evolve(gen=200, population=None, pop=50):
 		#select parents and breed new population
 		new_population = []
 		for i in range(pop):
-			new_population.append(fp.fern2( population[select(pop_fitness)] ))
+			new_population.append(fernpy.fern2( population[select(pop_fitness)] ))
 			if rand.random() < crossover_rate:
 				new_population[-1].crossover( population[select(pop_fitness)] ) 
 			if rand.random() < mutation_rate:
@@ -331,8 +330,9 @@ def plot_phase(control=None, state0 = None):
 		
 	#phase portrait (vector field)
 	thetamax, hmax = max(abs(theta)), max(abs(h))
-	theta, h = np.meshgrid(np.linspace(-thetamax, thetamax, 10), np.linspace(-hmax, hmax, 10))
-	Dtheta, Dh = np.array(theta), np.array(h)
+	theta, h = numpy.meshgrid(numpy.linspace(-thetamax, thetamax, 10), 
+				  numpy.linspace(-hmax, hmax, 10))
+	Dtheta, Dh = numpy.array(theta), numpy.array(h)
 	for i in range(theta.shape[0]):
 		for j in range(theta.shape[1]):
 			Dtheta[i,j] = dtheta(float(theta[i,j]), float(h[i,j]))
@@ -342,7 +342,7 @@ def plot_phase(control=None, state0 = None):
 	plot.quiver(theta, h, Dtheta, Dh) #no polar equivalent...
 	
 	#optimal path mode
-	h = np.linspace(-hmax, hmax, 100)
+	h = numpy.linspace(-hmax, hmax, 100)
 	plot.plot(path(h), h, color='blue') #use polar(theta, h)?
 	if control is None:
 		plot.savefig("optimal-satellite-cart.png", dpi=200)
