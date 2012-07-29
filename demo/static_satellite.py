@@ -1,4 +1,4 @@
-import fernpy as fp
+import fernpy
 import random as rand
 import sys #for printing
 import numpy as np
@@ -7,6 +7,7 @@ import scipy as sp #for argmax
 from math import pi
 from math import log
 import fernplot as fplt
+import pp
 
 def random_seed(n):
 	rand.seed(n)
@@ -45,7 +46,7 @@ def generate_data(n=1000):
 def fitness(individual, numbers, classes):
 	"""procedure to compute evolutionary fitness"""
 	correct = 0.0
-	p = fp.point2()
+	p = fernpy.point2()
 	for index, number in enumerate(numbers):
 		p[0], p[1] = number[0], number[1]
 		if individual.query(p) == classes[index]:
@@ -80,10 +81,10 @@ mutation_type_chance_fork = .1 #best yet: .1
 def evolve(gen=500, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
-		r = fp.region2()
-		r[0], r[1] = fp.interval(-pi, pi), fp.interval(-50.0, 50.0)
-		r.set_uniform( fp.interval(-pi, pi) )
-		population = [fp.fern2(r, 3) for i in range(pop)]
+		r = fernpy.region2()
+		r[0], r[1] = fernpy.interval(-pi, pi), fernpy.interval(-50.0, 50.0)
+		r.set_uniform( fernpy.interval(-pi, pi) )
+		population = [fernpy.fern2(r, 3) for i in range(pop)]
 		randomize=True
 	else:
 		pop = len(population)
@@ -101,6 +102,12 @@ def evolve(gen=500, population=None, pop=50):
 	#	for index, individual in enumerate(population):
 	#		population[index].randomize(50)
 	
+	job_server = pp.Server(ppservers=())
+	jobs = []
+	subfuncs = ()
+	packages = ("numpy", "fernpy")
+	template = pp.Template(job_server, fitness, subfuncs, packages)
+	
 	max_fitness = [0]*gen
 	median_fitness = [0]*gen
 	min_fitness = [0]*gen
@@ -113,7 +120,13 @@ def evolve(gen=500, population=None, pop=50):
 		#evaluate ferns
 		pop_fitness = np.array([0.0]*pop)
 		for index, individual in enumerate(population):
-			pop_fitness[index] = fitness(individual, numbers, classes)
+			if len(jobs) < pop: #only happens in first generation
+				jobs.append( template.submit(individual, numbers, classes) )
+			else:
+			 	jobs[index] = template.submit(individual, numbers, classes)
+		
+		for index, result in enumerate(jobs):
+			pop_fitness[index] = result()
 		
 		#record max and median fitness
 		max_fitness_index = sp.argmax(pop_fitness)
@@ -139,7 +152,7 @@ def evolve(gen=500, population=None, pop=50):
 		new_population = []
 		new_population.append( population[max_fitness_index] ) #elitism
 		for i in range(1, pop):
-			new_population.append(fp.fern2( population[select(pop_fitness)] ))
+			new_population.append(fernpy.fern2( population[select(pop_fitness)] ))
 			if rand.random() < crossover_rate:
 				new_population[-1].crossover( population[select(pop_fitness)] ) 
 			if rand.random() < mutation_rate:
@@ -155,7 +168,7 @@ def evolve(gen=500, population=None, pop=50):
 	a.set_xlim([-pi, pi])
 	plot.show()
 	
-	fplt.plot( population[max_fitness_index] )
+	fplt.plot(population[max_fitness_index], "static_satellite.png")
 	
 	plot.figure()
 	plot.plot(range(gen), max_fitness, '+', color='green') #plot fitness progression

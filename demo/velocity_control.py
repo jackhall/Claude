@@ -16,82 +16,27 @@ import pp
 def random_seed(n):
 	rand.seed(n)
 
-##### ode ######
-thrust = .5; #can't be global variable, need to make it local for pp
-J = 100.0 #can't have global variables, so now dispersed through file :(
-h0 = 2.0 #range of random initial h is [-h0, h0]
-
-def path(h):
-	"""represents optimal return path and decision boundary"""
-	return -0.5*h*abs(h)/(J*thrust)
-
-def roll(y):
-	"""takes care of angle roll-over"""
-	theta = y[0]
-	if abs(theta) > math.pi:
-		theta %= 2*math.pi
-		if theta > math.pi:
-			theta -= 2*math.pi
-	return [theta, y[1]]
+thrust = .5
 
 def random_state():
 	"""generate random initial condition"""
-	theta = random.random()*2*math.pi - math.pi #between -pi and pi rad
-	h = (random.random()*2 - 1)*h0	
-	return [theta, h]
+	v = random.random()*20.0 - 10.0 #between -pi and pi rad
+	return [v]
 
 class OptimalController:
 	def query(self, point): 
 		"""mimics fern.query to give optimal control of the satellite"""
-		theta, h = point[0], point[1]
-		manifold = path(h)
-		if theta > manifold: 
+		v = point[0]
+		if v > 0: 
 			mode = 1
-		elif theta < manifold: 
+		elif v < 0: 
 			mode = 2
 		else: 
-			if h > 0: 
-				mode = 1
-			elif h < 0:
-				mode = 2
-			else:
-				mode = 0
+			mode = 0
 		return mode
-		
-def dh(theta, h, control=None, thrust=.5):
-	"""computes the derivative of angular momentum (torque thrust)"""
-	if control is None:
-		control = OptimalController()
-	
-	p = fernpy.point2()
-	#p[0], p[1] = roll([theta, h]) 
-	mode = control.query(p) 
-	if mode is 0:
-		torque = 0
-	elif mode is 1:
-		torque = -thrust
-	elif mode is 2:
-		torque = thrust		
-	return torque
 
-def dtheta(theta, h, J=100.0):
-	"""computes the angular velocity"""
-	return h/J
-
-#def f(state, t, control=None):
-#	"""ode representing a satellite - to be solved numerically"""
-#	theta, h = state
-#	Dtheta = dtheta(theta, h)
-#	Dh = dh(theta, h, control)
-#	return Dtheta, Dh
-
-#event detection by stepping through scipy.ode (object-oriented wrapper of lsoda)
-def fblank(t, state, torque):
-	"""ode representing satellite - needs 'torque' to be set"""
-	theta, h = state
-	Dtheta = dtheta(theta, h)
-	Dh = torque
-	return [Dtheta, Dh] #f2py weirdness requires a list instead of a tuple
+def f(t, state, force):
+	return [force]
 
 def simulate(t_final, dt, control=None, state0=None, thrust=.5):
 	"""simulates a satellite (with event detection)"""
@@ -104,14 +49,14 @@ def simulate(t_final, dt, control=None, state0=None, thrust=.5):
 	state_tolerance = .01
 	
 	y_out, t_out = [], []
-	solver = scipy.integrate.ode(fblank).set_integrator('dopri5') #vode cannot run in parallel
+	solver = scipy.integrate.ode(f).set_integrator('dopri5') #vode cannot run in parallel
 	solver.set_initial_value(state0, 0.0) #thinks state0 has only one number in it?
-	p = fernpy.point2()
+	p = fernpy.point1()
 	max_time = time.clock() + 0.1 
 	while solver.t < t_final and solver.successful():
 		
 		#select a control mode by setting torque
-		p[0], p[1] = solver.y
+		p[0] = solver.y[0]
 		mode = control.query(p) 
 		if mode is 0:
 			solver.set_f_params(0.0)
@@ -130,7 +75,7 @@ def simulate(t_final, dt, control=None, state0=None, thrust=.5):
 			solver.integrate(solver.t + dt)
 			#if abs(solver.y[0]) > pi:
 			#	solver.set_initial_value(roll(solver.y), solver.t)
-			p[0], p[1] = solver.y
+			p[0] = solver.y[0]
 			if sum(abs(solver.y)) < state_tolerance:
 				solver.set_f_params(0.0)
 			elif control.query(p) != mode:
@@ -151,7 +96,7 @@ def simulate(t_final, dt, control=None, state0=None, thrust=.5):
 			solver.integrate(solver.t + bisect_step)
 			#if abs(solver.y[0]) > pi: #two if statements interacting to stop break
 			#	solver.set_initial_value(roll(solver.y), solver.t)
-			p[0], p[1] = solver.y
+			p[0] = solver.y[0]
 			#sys.stdout.write("\rstep size: %f" % bisect_step)
 			#sys.stdout.flush()
 			if control.query(p) != mode:
@@ -171,7 +116,6 @@ def simulate(t_final, dt, control=None, state0=None, thrust=.5):
 		t_out.append(t_final)
 	
 	return numpy.array(y_out), t_out
-	
 
 ###### fitness evaluation #######
 momentum_weight = .2;
@@ -182,7 +126,6 @@ def fitness(individual, state0):
 	for i in state0: 
 		results, time = simulate(100, 10, individual, i)
 		total_error += scipy.integrate.trapz(abs(results[:,0]), time)
-		total_error += scipy.integrate.trapz(abs(results[:,1]), time)
 		#total_error += abs(results[-1,0])
 	return 3000.0/total_error 
 	
@@ -202,33 +145,20 @@ def median(sequence):
 		mid_right = len(sequence)/2
 		return (sequence[mid_right] + sequence[mid_right-1]) / 2.0
 	else:
-		return sequence[ len(sequence)/2 ]    
+		return sequence[ len(sequence)/2 ] 
 
-#################################
-##### genetic algorithm #########
-#################################
-#tweak options:
-#	initial fern configuration
-#	initial momentum for simulations
-#	allow any merge (destruction of subtrees)
-#	choose another fitness function
-#	control fitness range with power law
-#	mutation probabilities (leaf v fork, structure v value, dimension v bit)
-#	mutation and crossover rates
-#	deterministic v stochastic evaluation
-#do I need to write a plotter for ferns?
 mutation_rate = .4 #best yet: .4
-crossover_rate = .05 #best yet: .05
+crossover_rate = .2 #best yet: .05
 node_type_chance = .85 #best yet: .8
-mutation_type_chance_leaf = .25 #best yet: .15
+mutation_type_chance_leaf = .15 #best yet: .15
 mutation_type_chance_fork = .1 #best yet: .1
 #fitness_ratio = 3 #ratio of max fitness to median fitness (or mean)
 def evolve(gen=200, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
-		r = fernpy.region2()
-		r[0], r[1] = fernpy.interval(-4*math.pi, 4*math.pi), fernpy.interval(-50.0, 50.0)
-		population = [fernpy.fern2(r, 3) for i in range(pop)]
+		r = fernpy.region1()
+		r[0] = fernpy.interval(-20.0, 20.0)
+		population = [fernpy.fern1(r, 3) for i in range(pop)]
 		randomize = True
 	else:
 		pop = len(population)
@@ -238,24 +168,22 @@ def evolve(gen=200, population=None, pop=50):
 		population[index].set_node_type_chance(node_type_chance)
 		population[index].set_mutation_type_chance(mutation_type_chance_fork, 
 							   mutation_type_chance_leaf)
-	
-	#if randomize:
-	#	for index, individual in enumerate(population):
-	#		population[index].randomize(50)
+		if randomize:
+			population[index].randomize(15)
 	
 	job_server = pp.Server(ppservers=())
 	jobs = []
-	subfuncs = (simulate, fblank, dtheta)
+	subfuncs = (simulate, f)
 	packages = ("time", "scipy", "scipy.integrate", "numpy", "math", "fernpy")
 	template = pp.Template(job_server, fitness, subfuncs, packages)
 	
 	max_fitness = [0]*gen
 	median_fitness = [0]*gen
 	min_fitness = [0]*gen
-	state0 = [random_state() for i in range(5)] #5 simulations per evaluation
+	#state0 = [random_state() for i in range(5)] #5 simulations per evaluation
 	
 	for generation in range(gen):
-		#state0 = [random_state() for i in range(5)] #5 simulations per evaluation
+		state0 = [random_state() for i in range(10)] #5 simulations per evaluation
 		optimal_fitness = fitness(OptimalController(), state0)
 	
 		#evaluate ferns
@@ -294,7 +222,7 @@ def evolve(gen=200, population=None, pop=50):
 		new_population = []
 		new_population.append( population[max_fitness_index] ) #elitism
 		for i in range(1, pop):
-			new_population.append(fernpy.fern2( population[select(pop_fitness)] ))
+			new_population.append(fernpy.fern1( population[select(pop_fitness)] ))
 			if random.random() < crossover_rate:
 				new_population[-1].crossover( population[select(pop_fitness)] ) 
 			if random.random() < mutation_rate:
@@ -303,10 +231,10 @@ def evolve(gen=200, population=None, pop=50):
 		population = new_population
 			
 	##### plots ########
-	fplt.plot(population[max_fitness_index], "satellite_fern.png")
+	fplt.plot(population[max_fitness_index], "velocity_control.png")
 	#print population[max_fitness_index]
 	
-	plot_phase( population[ max_fitness_index ] ) #plot best solution
+	plot_sim( population[ max_fitness_index ] ) #plot best solution
 	plot.figure()
 	plot.plot(range(gen), max_fitness, '+', color='green') #plot fitness progression
 	plot.plot(range(gen), median_fitness, 'x', color='blue')
@@ -314,56 +242,13 @@ def evolve(gen=200, population=None, pop=50):
 	plot.show()
 	
 	return population, pop_fitness
-
-
-########## phase plotting ########### 
-def plot_phase(control=None, state0=None):
-	"""generates a phase portrait and phase trajectory from initial conditions"""
-	#time = np.linspace(0, 20, 100) not needed for simulate()
 	
+def plot_sim(control=None, state0=None):
 	results, time = simulate(100, 10, control, state0)
-	theta, h = results[:,0], results[:,1]
-	#statew = [theta[-1], h[-1]]
-	#print "Final: ", statew
-	
-	#system trajectory
-	plot.figure(1) 
-	plot.plot(theta, h, color='green') #use polar(theta, h)?
-	plot.figure(2)
-	plot.polar(theta, h, color='green')
-		
-	#phase portrait (vector field)
-	thetamax, hmax = max(abs(theta)), max(abs(h))
-	theta, h = numpy.meshgrid(numpy.linspace(-thetamax, thetamax, 10), 
-				  numpy.linspace(-hmax, hmax, 10))
-	Dtheta, Dh = numpy.array(theta), numpy.array(h)
-	for i in range(theta.shape[0]):
-		for j in range(theta.shape[1]):
-			Dtheta[i,j] = dtheta(float(theta[i,j]), float(h[i,j]))
-			Dh[i,j] = dh(float(theta[i,j]), float(h[i,j]))
-	
+	v = results[:,0]
 	plot.figure(1)
-	plot.quiver(theta, h, Dtheta, Dh) #no polar equivalent...
-	
-	#optimal path mode
-	h = numpy.linspace(-hmax, hmax, 100)
-	plot.plot(path(h), h, color='blue') #use polar(theta, h)?
-	if control is None:
-		plot.savefig("optimal-satellite-cart.png", dpi=200)
-	else:
-		plot.savefig("satellite-nonoptimal-cart.png", dpi=200)
-	plot.xlabel("angle (rad)")
-	plot.ylabel("angular momentum (N-m-s)")
-	
-	#optimal mode in polar
-	plot.figure(2)
-	plot.polar(path(h), h, color='blue')
-	if control is None:
-		plot.savefig("optimal-satellite-polar.png", dpi=200)
-	else:
-		plot.savefig("satellite-nonoptimal-polar.png", dpi=200)
-	plot.xlabel("angle (rad)")
-	plot.ylabel("angular momentum (N-m-s)")
+	plot.plot(time, v)
+	plot.xlabel("Time (s)")
+	plot.ylabel("Velocity (m/s)")
 	plot.show()
-	
 	

@@ -137,7 +137,7 @@ def evolve(gen=200, population=None, pop=50):
 		
 		population = new_population
 	
-	fplt.plot( population[max_fitness_index] )
+	fplt.plot(population[max_fitness_index], "classify_fern.png")
 	
 	plot.figure()
 	plot.plot(range(gen), max_fitness, '+', color='green') #plot fitness progression
