@@ -306,6 +306,10 @@ def evolve(gen=200, population=None, pop=50):
 	fplt.plot(population[max_fitness_index], "satellite_fern.png")
 	#print population[max_fitness_index]
 	
+	datafile = pickle.Pickler("satellite_fern.dat")
+	datafile.dump(population)
+	datafile.dump(pop_fitness)
+	
 	plot_phase( population[ max_fitness_index ] ) #plot best solution
 	plot.figure()
 	plot.plot(range(gen), max_fitness, '+', color='green') #plot fitness progression

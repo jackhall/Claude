@@ -170,11 +170,15 @@ def evolve(gen=500, population=None, pop=50):
 	
 	fplt.plot(population[max_fitness_index], "static_satellite.png")
 	
+	datafile = pickle.Pickler("static_satellite.dat")
+	datafile.dump(population)
+	datafile.dump(pop_fitness)
+	
 	plot.figure()
 	plot.plot(range(gen), max_fitness, '+', color='green') #plot fitness progression
 	plot.plot(range(gen), median_fitness, 'x', color='blue')
 	plot.plot(range(gen), min_fitness, '.', color = 'red')
 	plot.show()
 	
-	return population
+	return population, pop_fitness
 	
