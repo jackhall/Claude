@@ -1,5 +1,5 @@
 import fernpy
-import random as rand
+import random
 import sys #for printing
 import numpy
 import matplotlib.pyplot as plot
@@ -36,7 +36,7 @@ def fitness(individual, numbers, classes):
 	
 def select(population_fitness):
 	"""randomly selects an element based on normalized fitnesses"""
-	choice = rand.random()
+	choice = random.random()
 	for index, fitness in enumerate(population_fitness):
 		if fitness > choice: 
 			return index
@@ -59,7 +59,7 @@ node_type_chance = .85 #best yet: .85
 mutation_type_chance_leaf = .15 #best yet: .15
 mutation_type_chance_fork = .1 #best yet: .1
 #fitness_ratio = 2 #ratio of max fitness to median fitness (or mean)
-def evolve(gen=200, population=None, pop=50):
+def evolve(gen=500, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
 		r = fernpy.region1()
@@ -117,7 +117,6 @@ def evolve(gen=200, population=None, pop=50):
 		#if max_fitness[generation] != fitness_mean: 
 		#	a = log(fitness_ratio) / (log(max_fitness[generation]) - log(fitness_mean))
 		#	pop_fitness = (pop_fitness - fitness_mean)**a + fitness_mean
-		pop_fitness /= sum(pop_fitness)
 		
 		sys.stdout.write("\rgen %i" % generation)
 		sys.stdout.flush()
@@ -125,6 +124,8 @@ def evolve(gen=200, population=None, pop=50):
 		if generation == gen-1: 
 			sys.stdout.write("\n")
 			break #skip breeding on last step
+		
+		pop_fitness /= sum(pop_fitness)
 		
 		#select parents and breed new population
 		new_population = []
@@ -140,9 +141,11 @@ def evolve(gen=200, population=None, pop=50):
 	
 	fplt.plot(population[max_fitness_index], "classify_fern.png")
 	
-	datafile = pickle.Pickler("classify_fern.dat")
-	datafile.dump(population)
-	datafile.dump(pop_fitness)
+	datafile = open("classify_fern.dat", "wb")
+	pickler = pickle.Pickler(datafile)
+	pickler.dump(population)
+	pickler.dump(pop_fitness)
+	datafile.close()
 	
 	plot.figure()
 	plot.plot(range(gen), max_fitness, '+', color='green') #plot fitness progression
@@ -150,5 +153,11 @@ def evolve(gen=200, population=None, pop=50):
 	plot.plot(range(gen), min_fitness, '.', color = 'red')
 	plot.show()
 	
+	return population, pop_fitness
+
+def load(filename="classify_fern.dat"):
+	datafile = open(filename, "rb")
+	population = pickle.load(datafile)
+	pop_fitness = pickle.load(datafile)
 	return population, pop_fitness
 	

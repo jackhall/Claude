@@ -202,15 +202,15 @@ def plot(fern, filename="fern.png"):
 		draw = ImageDraw.Draw(image)
 		scale = float(size) / fern.get_bounds(1).span(), \
 			float(size) / fern.get_bounds(2).span()
-		xmin, ymin = fern.get_bounds(1).lower, fern.get_bounds(2).lower
+		xmin, ymax = fern.get_bounds(1).lower, fern.get_bounds(2).upper
 		x, y = (0, size), (0, size)
 	
 		while True:
 			xint, yint = it.region[0], it.region[1]
 			x = round((xint.lower-xmin) * scale[0]), \
 			    round((xint.upper-xmin) * scale[0])
-			y = round((yint.lower-ymin) * scale[1]), \
-			    round((yint.upper-ymin) * scale[1])
+			y = round((ymax-yint.upper) * scale[1]), \
+			    round((ymax-yint.lower) * scale[1])
 			draw.rectangle([x[0], y[0], x[1], y[1]],
 				       colors[it.node.get_leaf_bin()])
 			#draw.line outlines?

@@ -10,6 +10,7 @@ import sys #for printing
 import time #for time limit on simulations and pausing
 import fernplot as fplt
 import pp
+import pickle
 
 #rand.seed(3) #call with no arguments for true randomness
 
@@ -202,7 +203,7 @@ def median(sequence):
 		mid_right = len(sequence)/2
 		return (sequence[mid_right] + sequence[mid_right-1]) / 2.0
 	else:
-		return sequence[ len(sequence)/2 ]    
+		return sequence[ len(sequence)/2 ] 
 
 #################################
 ##### genetic algorithm #########
@@ -223,7 +224,7 @@ node_type_chance = .85 #best yet: .8
 mutation_type_chance_leaf = .25 #best yet: .15
 mutation_type_chance_fork = .1 #best yet: .1
 #fitness_ratio = 3 #ratio of max fitness to median fitness (or mean)
-def evolve(gen=200, population=None, pop=50):
+def evolve(gen=500, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
 		r = fernpy.region2()
@@ -252,15 +253,14 @@ def evolve(gen=200, population=None, pop=50):
 	max_fitness = [0]*gen
 	median_fitness = [0]*gen
 	min_fitness = [0]*gen
-	state0 = [random_state() for i in range(5)] #5 simulations per evaluation
+	#state0 = [random_state() for i in range(5)] #5 simulations per evaluation
 	
 	for generation in range(gen):
-		#state0 = [random_state() for i in range(5)] #5 simulations per evaluation
+		state0 = [random_state() for i in range(20)] #simulations per evaluation
 		optimal_fitness = fitness(OptimalController(), state0)
 	
 		#evaluate ferns
 		pop_fitness = numpy.array([0.0]*pop)
-		#state0 = [random_state() for i in range(10)] #simulations per evaluation
 		for index, individual in enumerate(population):
 			if len(jobs) < pop: #only happens in first generation
 				jobs.append( template.submit(individual, state0) )
@@ -281,7 +281,6 @@ def evolve(gen=200, population=None, pop=50):
 		#if max_fitness[generation] != median_fitness[generation]: #fitness_mean: 
 		#	a = log(fitness_ratio) / (log(max_fitness[generation]) - log(median_fitness[generation]))
 		#	pop_fitness = (pop_fitness - median_fitness[generation])**a + median_fitness[generation]
-		pop_fitness /= sum(pop_fitness)
 		
 		sys.stdout.write("\rgen %i" % generation)
 		sys.stdout.flush()
@@ -289,6 +288,8 @@ def evolve(gen=200, population=None, pop=50):
 		if generation == gen-1: 
 			sys.stdout.write("\n")
 			break #skip breeding on last step
+			
+		pop_fitness /= sum(pop_fitness)
 		
 		#select parents and breed new population
 		new_population = []
@@ -306,9 +307,11 @@ def evolve(gen=200, population=None, pop=50):
 	fplt.plot(population[max_fitness_index], "satellite_fern.png")
 	#print population[max_fitness_index]
 	
-	datafile = pickle.Pickler("satellite_fern.dat")
-	datafile.dump(population)
-	datafile.dump(pop_fitness)
+	datafile = open("satellite_fern.dat", "wb")
+	pickler = pickle.Pickler(datafile)
+	pickler.dump(population)
+	pickler.dump(pop_fitness)
+	datafile.close()
 	
 	plot_phase( population[ max_fitness_index ] ) #plot best solution
 	plot.figure()
@@ -327,6 +330,7 @@ def plot_phase(control=None, state0=None):
 	
 	results, time = simulate(100, 10, control, state0)
 	theta, h = results[:,0], results[:,1]
+	state0 = (theta[0], h[0])
 	#statew = [theta[-1], h[-1]]
 	#print "Final: ", statew
 	
@@ -368,6 +372,13 @@ def plot_phase(control=None, state0=None):
 		plot.savefig("satellite-nonoptimal-polar.png", dpi=200)
 	plot.xlabel("angle (rad)")
 	plot.ylabel("angular momentum (N-m-s)")
+	
+	plot.plot(state0[0], state0[1], 'o', color='green')
 	plot.show()
 	
+def load(filename="satellite_fern.dat"):
+	datafile = open(filename, "rb")
+	population = pickle.load(datafile)
+	pop_fitness = pickle.load(datafile)
+	return population, pop_fitness
 	

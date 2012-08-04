@@ -10,17 +10,17 @@ import sys #for printing
 import time #for time limit on simulations and pausing
 import fernplot as fplt
 import pp
+import pickle
 
 #rand.seed(3) #call with no arguments for true randomness
-
-def random_seed(n):
-	rand.seed(n)
 
 thrust = .5
 
 def random_state():
 	"""generate random initial condition"""
-	v = random.random()*20.0 - 10.0 #between -pi and pi rad
+	v = 0.0
+	while abs(v) < 3.0:
+		v = numpy.random.uniform(-15.0, 15.0) #between -pi and pi rad
 	return [v]
 
 class OptimalController:
@@ -124,7 +124,7 @@ def fitness(individual, state0):
 	#simulate, maybe start out with static i.c. and anneal to random ones
 	total_error = 0.0;
 	for i in state0: 
-		results, time = simulate(100, 10, individual, i)
+		results, time = simulate(50, 10, individual, i)
 		total_error += scipy.integrate.trapz(abs(results[:,0]), time)
 		#total_error += abs(results[-1,0])
 	return 3000.0/total_error 
@@ -153,7 +153,7 @@ node_type_chance = .85 #best yet: .8
 mutation_type_chance_leaf = .15 #best yet: .15
 mutation_type_chance_fork = .1 #best yet: .1
 #fitness_ratio = 3 #ratio of max fitness to median fitness (or mean)
-def evolve(gen=200, population=None, pop=50):
+def evolve(gen=1000, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
 		r = fernpy.region1()
@@ -183,7 +183,7 @@ def evolve(gen=200, population=None, pop=50):
 	#state0 = [random_state() for i in range(5)] #5 simulations per evaluation
 	
 	for generation in range(gen):
-		state0 = [random_state() for i in range(10)] #5 simulations per evaluation
+		state0 = [-15, -7, 7, 15] #4 simulations per evaluation
 		optimal_fitness = fitness(OptimalController(), state0)
 	
 		#evaluate ferns
@@ -209,7 +209,6 @@ def evolve(gen=200, population=None, pop=50):
 		#if max_fitness[generation] != median_fitness[generation]: #fitness_mean: 
 		#	a = log(fitness_ratio) / (log(max_fitness[generation]) - log(median_fitness[generation]))
 		#	pop_fitness = (pop_fitness - median_fitness[generation])**a + median_fitness[generation]
-		pop_fitness /= sum(pop_fitness)
 		
 		sys.stdout.write("\rgen %i" % generation)
 		sys.stdout.flush()
@@ -217,6 +216,8 @@ def evolve(gen=200, population=None, pop=50):
 		if generation == gen-1: 
 			sys.stdout.write("\n")
 			break #skip breeding on last step
+			
+		pop_fitness /= sum(pop_fitness)
 		
 		#select parents and breed new population
 		new_population = []
@@ -234,9 +235,11 @@ def evolve(gen=200, population=None, pop=50):
 	fplt.plot(population[max_fitness_index], "velocity_control.png")
 	#print population[max_fitness_index]
 	
-	datafile = pickle.Pickler("velocity_control.dat")
-	datafile.dump(population)
-	datafile.dump(pop_fitness)
+	datafile = open("velocity_control.dat", "wb")
+	pickler = pickle.Pickler(datafile)
+	pickler.dump(population)
+	pickler.dump(pop_fitness)
+	datafile.close()
 	
 	plot_sim( population[ max_fitness_index ] ) #plot best solution
 	plot.figure()
@@ -255,4 +258,10 @@ def plot_sim(control=None, state0=None):
 	plot.xlabel("Time (s)")
 	plot.ylabel("Velocity (m/s)")
 	plot.show()
+
+def load(filename="velocity_control.dat"):
+	datafile = open(filename, "rb")
+	population = pickle.load(datafile)
+	pop_fitness = pickle.load(datafile)
+	return population, pop_fitness
 	

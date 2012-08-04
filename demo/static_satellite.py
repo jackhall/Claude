@@ -1,5 +1,5 @@
 import fernpy
-import random as rand
+import random
 import sys #for printing
 import numpy as np
 import matplotlib.pyplot as plot
@@ -8,6 +8,7 @@ from math import pi
 from math import log
 import fernplot as fplt
 import pp
+import pickle
 
 def random_seed(n):
 	rand.seed(n)
@@ -55,7 +56,7 @@ def fitness(individual, numbers, classes):
 	
 def select(population_fitness):
 	"""randomly selects an element based on normalized fitnesses"""
-	choice = rand.random()
+	choice = random.random()
 	for index, fitness in enumerate(population_fitness):
 		if fitness > choice: 
 			return index
@@ -78,7 +79,7 @@ node_type_chance = .7 #best yet: .7
 mutation_type_chance_leaf = .15 #best yet: .15
 mutation_type_chance_fork = .1 #best yet: .1
 #fitness_ratio = 2 #ratio of max fitness to median fitness (or mean)
-def evolve(gen=500, population=None, pop=50):
+def evolve(gen=1000, population=None, pop=50):
 	"""runs fern genetic algorithm and returns final population"""
 	if population is None:
 		r = fernpy.region2()
@@ -97,7 +98,7 @@ def evolve(gen=500, population=None, pop=50):
 	
 	if randomize:
 		for index, individual in enumerate(population):
-			population[index].randomize(500)
+			population[index].randomize(100)
 	#else:
 	#	for index, individual in enumerate(population):
 	#		population[index].randomize(50)
@@ -115,7 +116,7 @@ def evolve(gen=500, population=None, pop=50):
 	for generation in range(gen):
 		#generating new data for each generation helps encourage
 		#a healthy genetic variation
-		numbers, classes = generate_data()
+		numbers, classes = generate_data(10000)
 	
 		#evaluate ferns
 		pop_fitness = np.array([0.0]*pop)
@@ -139,7 +140,6 @@ def evolve(gen=500, population=None, pop=50):
 		#if max_fitness[generation] != fitness_mean: #median_fitness[generation]:
 		#	a = log(fitness_ratio) / (log(max_fitness[generation]) - log(fitness_mean))
 		#	pop_fitness = (pop_fitness - fitness_mean)**a + fitness_mean
-		pop_fitness /= sum(pop_fitness)
 		
 		sys.stdout.write("\rgen %i" % generation)
 		sys.stdout.flush()
@@ -147,6 +147,8 @@ def evolve(gen=500, population=None, pop=50):
 		if generation == gen-1: 
 			sys.stdout.write("\n")
 			break #skip breeding on last step
+		
+		pop_fitness /= sum(pop_fitness)
 		
 		#select parents and breed new population
 		new_population = []
@@ -160,7 +162,7 @@ def evolve(gen=500, population=None, pop=50):
 		
 		population = new_population
 	
-	h = 1.0*np.array(range(-50, 50))
+	h = 1.0*np.array(range(-40, 40))
 	theta = path(h)
 	plot.figure()
 	plot.plot(theta, h)
@@ -170,9 +172,11 @@ def evolve(gen=500, population=None, pop=50):
 	
 	fplt.plot(population[max_fitness_index], "static_satellite.png")
 	
-	datafile = pickle.Pickler("static_satellite.dat")
-	datafile.dump(population)
-	datafile.dump(pop_fitness)
+	datafile = open("static_satellite.dat", "wb")
+	pickler = pickle.Pickler(datafile)
+	pickler.dump(population)
+	pickler.dump(pop_fitness)
+	datafile.close()
 	
 	plot.figure()
 	plot.plot(range(gen), max_fitness, '+', color='green') #plot fitness progression
@@ -181,4 +185,10 @@ def evolve(gen=500, population=None, pop=50):
 	plot.show()
 	
 	return population, pop_fitness
-	
+
+def load(filename="static_satellite.dat"):
+	datafile = open(filename, "rb")
+	population = pickle.load(datafile)
+	pop_fitness = pickle.load(datafile)
+	return population, pop_fitness
+
