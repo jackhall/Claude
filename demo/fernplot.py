@@ -275,7 +275,7 @@ def add_ticks(limits=[-20, 20], oldfile="velocity_control.png", newfile="test.pn
 		if (abs(ticklocs[1]) - 10) > 10:
 			ticklocs.append(10)
 		for yloc in ticklocs:
-			tickval = round((yloc/scale[1]) + limits[2]) #needs to count backwards
+			tickval = round(((810-yloc)/scale[1]) + limits[2]) #needs to count backwards
 			draw.line([30, yloc, 50, yloc], black)
 			draw.text((5, yloc), str(tickval), black)
 		
