@@ -168,7 +168,7 @@ def fernplot_pil_test(dim=1):
 		print f
 		pil_plot(f)
 
-def plot(fern, filename="fern.png"):
+def plot(fern, filename="fern.png", numticks=11):
 	"""main plotting function, saves a png file"""
 	it = leaf_iter(fern)
 	first = leaf_iter(fern)
@@ -178,7 +178,7 @@ def plot(fern, filename="fern.png"):
 	draw = ImageDraw.Draw(image)
 
 	if type(fern) is fp.fern1:
-		image = Image.new("RGB", (size, 20), white)
+		image = Image.new("RGB", (size+25, 50), white)
 		draw = ImageDraw.Draw(image)
 		scale = float(size) / fern.get_bounds(1).span()
 		xmin = fern.get_bounds(1).lower 
@@ -196,6 +196,15 @@ def plot(fern, filename="fern.png"):
 			it.next()
 			if it.node == first.node: 
 				break
+		
+		ticksize = size/(numticks - 1)
+		ticklocs = range(0, 800, ticksize)
+		ticklocs.append(800)
+		for xloc in ticklocs:
+			tickval = round((xloc/scale) + xmin)
+			draw.line([xloc, 10, xloc, 30], black)
+			draw.text((xloc, 35), str(tickval), black)
+		
 		
 	elif type(fern) is fp.fern2:
 		image = Image.new("RGB", (size, size), white)
@@ -226,4 +235,49 @@ def plot(fern, filename="fern.png"):
 		return
 	
 	image.save(filename)
+
+def add_ticks(limits=[-20, 20], oldfile="velocity_control.png", newfile="test.png", numticks=9):
+	oldimage = Image.open(oldfile)
+	xsize, ysize = oldimage.size
+	size = 800
+	
+	if len(limits) == 2:
+		image = Image.new("RGB", (size+25, 50), white)
+		image.paste(oldimage, [0, 0, xsize, ysize])
+		draw = ImageDraw.Draw(image)
+		scale = float(size) / (limits[1] - limits[0])
+		ticksize = size/(numticks - 1)
+		ticklocs = range(0, 800, ticksize)
+		if (abs(ticklocs[-1]) - 800) > 10:
+			ticklocs.append(800)
+		for xloc in ticklocs:
+			tickval = round((xloc/scale) + limits[0])
+			draw.line([xloc, 10, xloc, 30], black)
+			draw.text((xloc, 35), str(tickval), black)
+			
+	elif len(limits) == 4:
+		image = Image.new("RGB", (size+65, size+40), white)
+		image.paste(oldimage, [40, 10, xsize+40, ysize+10])
+		draw = ImageDraw.Draw(image)
+		scale = float(size) / (limits[1] - limits[0]), \
+			float(size) / (limits[3] - limits[2])
+		ticksize = size/(numticks[0] - 1), size/(numticks[1] - 1)
+		
+		ticklocs = range(40, 840, ticksize[0])
+		if (abs(ticklocs[-1]) - 840) > 10:
+			ticklocs.append(840)
+		for xloc in ticklocs:
+			tickval = round((xloc/scale[0]) + limits[0])
+			draw.line([xloc, 800, xloc, 820], black)
+			draw.text((xloc, 825), str(tickval), black)
+		
+		ticklocs = range(810, 10, -ticksize[1])
+		if (abs(ticklocs[1]) - 10) > 10:
+			ticklocs.append(10)
+		for yloc in ticklocs:
+			tickval = round((yloc/scale[1]) + limits[2]) #needs to count backwards
+			draw.line([30, yloc, 50, yloc], black)
+			draw.text((5, yloc), str(tickval), black)
+		
+	image.save(newfile)
 

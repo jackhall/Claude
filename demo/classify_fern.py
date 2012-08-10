@@ -132,16 +132,16 @@ def evolve(gen=500, population=None, pop=50):
 		new_population.append( population[max_fitness_index] ) #elitism
 		for i in range(1, pop):
 			new_population.append(fernpy.fern1( population[select(pop_fitness)] ))
-			if rand.random() < crossover_rate:
+			if random.random() < crossover_rate:
 				new_population[-1].crossover( population[select(pop_fitness)] ) 
-			if rand.random() < mutation_rate:
+			if random.random() < mutation_rate:
 				new_population[-1].mutate()
 		
 		population = new_population
 	
-	fplt.plot(population[max_fitness_index], "classify_fern.png")
+	fplt.plot(population[max_fitness_index], "classify_fern2.png", 7)
 	
-	datafile = open("classify_fern.dat", "wb")
+	datafile = open("classify_fern2.dat", "wb")
 	pickler = pickle.Pickler(datafile)
 	pickler.dump(population)
 	pickler.dump(pop_fitness)
@@ -151,6 +151,8 @@ def evolve(gen=500, population=None, pop=50):
 	plot.plot(range(gen), max_fitness, '+', color='green') #plot fitness progression
 	plot.plot(range(gen), median_fitness, 'x', color='blue')
 	plot.plot(range(gen), min_fitness, '.', color = 'red')
+	plot.xlabel("Generation")
+	plot.ylabel("Fitness (# correct)")
 	plot.show()
 	
 	return population, pop_fitness
